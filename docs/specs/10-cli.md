@@ -28,7 +28,7 @@ command. The CLI writes FHIR JSON to stdout or to files.
 ### CLI commands
 
 ```
-fhir-fixtures generate <resource-type> [options]
+fhir-test-data generate <resource-type> [options]
 
 Resource types:
   patient              Generate Patient resources
@@ -54,19 +54,19 @@ Options:
 
 ```bash
 # Generate 5 UK patients to stdout
-fhir-fixtures generate patient --locale uk --count 5
+fhir-test-data generate patient --locale uk --count 5
 
 # Generate 10 AU patients to files
-fhir-fixtures generate patient --locale au --count 10 --output ./fixtures/
+fhir-test-data generate patient --locale au --count 10 --output ./fixtures/
 
 # Generate bundles with deterministic output
-fhir-fixtures generate bundle --locale us --count 3 --seed 42 --output ./fixtures/
+fhir-test-data generate bundle --locale us --count 3 --seed 42 --output ./fixtures/
 
 # Generate one of each resource type
-fhir-fixtures generate all --locale de --output ./fixtures/
+fhir-test-data generate all --locale de --output ./fixtures/
 
 # NDJSON format (one resource per line)
-fhir-fixtures generate patient --locale us --count 100 --format ndjson --output ./fixtures/
+fhir-test-data generate patient --locale us --count 100 --format ndjson --output ./fixtures/
 ```
 
 ## Implementation notes
@@ -81,7 +81,7 @@ import { registerGenerateCommand } from "./commands/generate.js";
 const program = new Command();
 
 program
-  .name("fhir-fixtures")
+  .name("fhir-test-data")
   .description("Generate valid FHIR R4 test resources with country-aware identifiers")
   .version("0.1.0");
 

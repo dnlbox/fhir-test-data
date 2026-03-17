@@ -40,6 +40,14 @@ export const SUPPORTED_RESOURCE_TYPES = [
 export type SupportedResourceType = (typeof SUPPORTED_RESOURCE_TYPES)[number];
 ```
 
+### FHIR version
+
+```typescript
+export const SUPPORTED_FHIR_VERSIONS = ["R4", "R4B", "R5"] as const;
+
+export type FhirVersion = (typeof SUPPORTED_FHIR_VERSIONS)[number];
+```
+
 ### Locale
 
 ```typescript
@@ -76,6 +84,8 @@ export interface BuilderOptions {
   count: number;
   /** Seed for deterministic random generation. Same seed = same output. */
   seed?: number;
+  /** FHIR version to target. Defaults to 'R4'. */
+  fhirVersion?: FhirVersion;
   /** Partial overrides to merge into every generated resource. */
   overrides?: Record<string, unknown>;
 }

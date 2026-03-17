@@ -1,8 +1,8 @@
-# AGENTS.md — fhir-fixtures
+# AGENTS.md — fhir-test-data
 
 ## Project overview
 
-A TypeScript-first library **and** CLI for generating valid, realistic FHIR R4 test resources.
+A TypeScript-first library **and** CLI for generating valid, realistic FHIR R4/R4B/R5 test resources.
 Country-aware — generates identifiers that pass real validation algorithms (NHS Modulus 11,
 Australian IHI Luhn, Indian Aadhaar Verhoeff, Dutch BSN 11-proef, etc.).
 

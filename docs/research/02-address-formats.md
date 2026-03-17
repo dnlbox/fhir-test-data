@@ -4,7 +4,7 @@
 
 FHIR addresses use the `Address` data type with fields: `line[]`, `city`, `district`,
 `state`, `postalCode`, `country`, and `use`/`type`. Each country populates these fields
-differently. fhir-fixtures must generate addresses that look realistic for each locale
+differently. fhir-test-data must generate addresses that look realistic for each locale
 and conform to the expected patterns that FHIR profile validators check.
 
 All addresses must be obviously synthetic — real street names paired with fictional

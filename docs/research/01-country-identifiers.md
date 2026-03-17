@@ -6,7 +6,7 @@ Each country's healthcare system defines its own patient and practitioner identi
 FHIR represents these as `Identifier` elements with a `system` URI and a `value`. The value
 must conform to the country's format and — critically — pass its check digit algorithm.
 
-This document catalogs every identifier system fhir-fixtures will support in v1, including
+This document catalogs every identifier system fhir-test-data will support in v1, including
 the exact validation algorithm and FHIR system URI.
 
 ---

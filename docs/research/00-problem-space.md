@@ -119,9 +119,9 @@ The TypeScript FHIR ecosystem is real and growing:
 This is a community that writes FHIR code in TypeScript, has type definitions, has
 client libraries — but lacks a test data generation tool. The gap is specific and fillable.
 
-## Where fhir-fixtures fits
+## Where fhir-test-data fits
 
-fhir-fixtures fills the specific gap of **programmatic, country-aware FHIR test data
+fhir-test-data fills the specific gap of **programmatic, country-aware FHIR test data
 generation in TypeScript**:
 
 - **Library-first**: import it in your test file, call a builder, get a valid FHIR resource
@@ -132,6 +132,6 @@ generation in TypeScript**:
 - **CLI included**: generate fixture files for teams that prefer static test data
 
 Together with fhir-resource-diff, this creates a natural workflow:
-1. **Generate** test data with fhir-fixtures
+1. **Generate** test data with fhir-test-data
 2. **Validate and diff** resources with fhir-resource-diff
 3. Both are TypeScript-first, browser-safe at the core, and designed for the same audience

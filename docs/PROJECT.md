@@ -6,10 +6,10 @@ TypeScript architecture, and developer tooling. The tool must be useful, credibl
 from any employer or client IP.
 
 Repository name:
-fhir-fixtures
+fhir-test-data
 
 Primary purpose:
-A TypeScript-first library and CLI for generating valid, realistic FHIR R4 test resources.
+A TypeScript-first library and CLI for generating valid, realistic FHIR R4/R4B/R5 test resources.
 Country-aware — generates identifiers that pass real validation algorithms (NHS Modulus 11,
 Australian IHI Luhn, Indian Aadhaar Verhoeff, Dutch BSN 11-proef, etc.).
 
@@ -29,7 +29,7 @@ The FHIR test data problem is real and unsolved in TypeScript.
   Developers either skip validation or hardcode known-valid numbers from documentation examples.
 
 Complementary to fhir-resource-diff:
-"Generate test data" (fhir-fixtures) and "validate/diff resources" (fhir-resource-diff) are a
+"Generate test data" (fhir-test-data) and "validate/diff resources" (fhir-resource-diff) are a
 natural pair. Together they cover the two most common tasks in FHIR integration testing.
 
 Target audience:
@@ -53,10 +53,13 @@ Builder pattern for generating FHIR resources:
 
 Locale/country parameter drives identifier systems, address formats, and name pools.
 
+Multi-version support: the builder accepts an optional `fhirVersion` parameter (`'R4' | 'R4B' | 'R5'`).
+R4 is the default. R4B and R5 are supported where resource shapes differ between versions.
+
 CLI for generating fixture files:
-- `fhir-fixtures generate patient --locale uk --count 10 --output ./fixtures/`
-- `fhir-fixtures generate bundle --locale au --count 5 --output ./fixtures/`
-- `fhir-fixtures generate all --locale us --count 3 --output ./fixtures/`
+- `fhir-test-data generate patient --locale uk --count 10 --output ./fixtures/`
+- `fhir-test-data generate bundle --locale au --count 5 --output ./fixtures/`
+- `fhir-test-data generate all --locale us --count 3 --output ./fixtures/`
 - `--seed` flag for deterministic output
 - `--format json|ndjson`
 
@@ -137,6 +140,12 @@ Feature scope for v1:
 8. Deterministic output via seed parameter
 9. Good README with examples
 10. Good tests verifying identifier algorithms against known-valid values
+
+Architecture note — FHIR version support:
+R4 is the default version. R4B and R5 are supported where resource shapes differ between
+versions (e.g., field renames, type changes). The `fhirVersion` parameter controls which
+version's structure is emitted. Most resources are identical across R4/R4B; R5 introduces
+more changes (e.g., `Observation.effective[x]` → `Observation.effective`).
 
 Do not attempt in v1:
 - Full FHIR profile validation (use fhir-resource-diff for that)
