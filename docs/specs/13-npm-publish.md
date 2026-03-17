@@ -31,14 +31,14 @@ N/A — this is a publishing/infrastructure spec.
 
 ```json
 {
-  "name": "fhir-fixtures",
+  "name": "fhir-test-data",
   "version": "0.1.0",
   "description": "TypeScript library and CLI for generating valid FHIR R4 test resources with country-aware identifiers",
   "license": "MIT",
   "author": "Daniel Veronez",
   "repository": {
     "type": "git",
-    "url": "https://github.com/danielveronez/fhir-fixtures"
+    "url": "https://github.com/danielveronez/fhir-test-data"
   },
   "keywords": [
     "fhir", "hl7", "healthcare", "test-data", "fixtures", "synthetic-data",

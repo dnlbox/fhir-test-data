@@ -30,11 +30,11 @@ None. This is the first spec.
 
 ```json
 {
-  "name": "fhir-fixtures",
+  "name": "fhir-test-data",
   "version": "0.1.0",
   "description": "TypeScript library and CLI for generating valid FHIR R4 test resources with country-aware identifiers",
   "type": "module",
-  "bin": { "fhir-fixtures": "./dist/cli/index.js" },
+  "bin": { "fhir-test-data": "./dist/cli/index.js" },
   "main": "./dist/core/index.js",
   "exports": {
     ".": "./dist/core/index.js"

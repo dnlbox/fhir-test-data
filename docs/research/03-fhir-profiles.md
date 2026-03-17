@@ -4,11 +4,11 @@
 
 FHIR profiles constrain base resource types for country-specific use. A Patient resource
 conforming to UK Core has different required fields and extensions than one conforming to
-US Core. fhir-fixtures needs to know which profiles exist for each locale so it can
+US Core. fhir-test-data needs to know which profiles exist for each locale so it can
 generate resources that conform to the correct profile.
 
 This document catalogs the major country-specific FHIR profiles and implementation guides (IGs)
-that fhir-fixtures should be aware of. v1 targets structural conformance (required fields,
+that fhir-test-data should be aware of. v1 targets structural conformance (required fields,
 identifier systems, value sets) rather than full profile validation.
 
 ---
@@ -234,11 +234,11 @@ identifier systems, value sets) rather than full profile validation.
 
 ---
 
-## Profile support strategy for fhir-fixtures
+## Profile support strategy for fhir-test-data
 
 ### v1 scope
 
-In v1, fhir-fixtures generates resources that are **structurally conformant** to the
+In v1, fhir-test-data generates resources that are **structurally conformant** to the
 major country profiles. This means:
 
 1. **Correct identifier systems** — the right `system` URI and valid identifier values
@@ -260,7 +260,7 @@ major country profiles. This means:
 
 The `--profile` flag is reserved for future use:
 ```
-fhir-fixtures generate patient --locale uk --profile uk-core
+fhir-test-data generate patient --locale uk --profile uk-core
 ```
 
 In v1, the locale alone determines which identifier systems and address formats to use.

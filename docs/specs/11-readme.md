@@ -27,7 +27,7 @@ N/A — this is a documentation spec.
 ### README structure
 
 1. **Title and tagline**
-   - "fhir-fixtures"
+   - "fhir-test-data"
    - "Generate valid FHIR R4 test resources with country-aware identifiers"
 
 2. **Why this exists** (2–3 paragraphs)
@@ -36,7 +36,7 @@ N/A — this is a documentation spec.
    - The international identifier gap
 
 3. **Quick start**
-   - Install: `pnpm add fhir-fixtures` (library) or `pnpm add -g fhir-fixtures` (CLI)
+   - Install: `pnpm add fhir-test-data` (library) or `pnpm add -g fhir-test-data` (CLI)
    - Library usage: 3-line example generating a UK Patient
    - CLI usage: 2-line example generating fixtures
 

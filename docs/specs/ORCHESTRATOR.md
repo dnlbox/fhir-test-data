@@ -1,13 +1,13 @@
-# ORCHESTRATOR.md — fhir-fixtures build guide
+# ORCHESTRATOR.md — fhir-test-data build guide
 
 ## What this is
 
-This file is the entry point for any AI session tasked with building or extending `fhir-fixtures`.
+This file is the entry point for any AI session tasked with building or extending `fhir-test-data`.
 Read this first. Then read the spec for the specific deliverable you are implementing.
 
 ## Project in one paragraph
 
-`fhir-fixtures` is a TypeScript library and CLI for generating valid, realistic FHIR R4 test
+`fhir-test-data` is a TypeScript library and CLI for generating valid, realistic FHIR R4/R4B/R5 test
 resources with country-aware identifiers, addresses, and names. The core logic is **browser-safe**
 so it can be used in Node.js, test suites, and browser-based tools. The CLI is a thin Node.js
 adapter on top of that shared core. See `docs/PROJECT.md` for the full project spec. See
@@ -137,15 +137,16 @@ The project is considered v1-complete when:
 
 - [ ] `pnpm build` succeeds and produces a working CLI binary
 - [ ] `pnpm test` passes with coverage of all core modules
-- [ ] `fhir-fixtures generate patient --locale us --count 5` produces valid FHIR Patient JSON
-- [ ] `fhir-fixtures generate patient --locale uk --count 5` produces Patients with valid NHS Numbers
-- [ ] `fhir-fixtures generate bundle --locale au --count 3` produces Bundles with internal references
-- [ ] `fhir-fixtures generate patient --locale uk --count 5 --seed 42` produces deterministic output
+- [ ] `fhir-test-data generate patient --locale us --count 5` produces valid FHIR Patient JSON
+- [ ] `fhir-test-data generate patient --locale uk --count 5` produces Patients with valid NHS Numbers
+- [ ] `fhir-test-data generate bundle --locale au --count 3` produces Bundles with internal references
+- [ ] `fhir-test-data generate patient --locale uk --count 5 --seed 42` produces deterministic output
 - [ ] All identifier generators pass validation against known-valid examples
 - [ ] README accurately describes the tool and includes working examples
 - [ ] No TypeScript errors, no lint errors
 - [ ] No Node-specific imports in `src/core/` or `src/locales/`
 - [ ] No real PHI or PII in any generated data
+- [ ] `fhir-test-data generate patient --locale us --fhir-version R5` produces valid R5 Patient JSON
 
 ---
 
