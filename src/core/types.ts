@@ -111,6 +111,11 @@ export interface AddressTemplate {
   cities: CityDefinition[];
   /** Generate a valid postal code for the given state/region */
   generatePostalCode: (rng: RandomFn, state?: string) => string;
+  /**
+   * Format a street address line. Defaults to "{number} {street}" if omitted.
+   * Override for locales that use "{street} {number}" order (DE, NL, FR).
+   */
+  formatLine?: (number: number, street: string) => string;
   /** ISO 3166-1 alpha-2 country code */
   country: string;
 }

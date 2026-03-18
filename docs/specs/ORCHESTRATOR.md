@@ -159,7 +159,7 @@ The project is considered v1-complete when:
 | 00 | `00-project-setup.md` | pnpm, typescript, vitest, tsup, eslint, prettier | complete |
 | 01 | `01-core-types.md` | FHIR resource types, builder interfaces, locale types | complete |
 | 02 | `02-identifier-generators.md` | Check digit algorithms: Luhn, Modulus 11, Verhoeff, 11-proef | complete |
-| 03 | `03-address-generators.md` | Country-aware address generation | open |
+| 03 | `03-address-generators.md` | Country-aware address generation | complete |
 | 04 | `04-name-generators.md` | Culturally appropriate names per locale | open |
 | 05 | `05-patient-builder.md` | Patient resource builder | open |
 
