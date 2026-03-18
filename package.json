@@ -10,6 +10,7 @@
     "healthcare",
     "fhir-test-data",
     "test-data",
+    "fixtures",
     "synthetic-data",
     "r4",
     "r4b",
@@ -18,9 +19,11 @@
     "cli",
     "identifiers",
     "nhs",
-    "us-core",
-    "au-core",
-    "uk-core"
+    "medicare",
+    "aadhaar",
+    "bsn",
+    "npi",
+    "typescript"
   ],
   "repository": {
     "type": "git",
