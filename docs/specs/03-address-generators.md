@@ -1,6 +1,6 @@
 # Spec 03 — Address generators
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
