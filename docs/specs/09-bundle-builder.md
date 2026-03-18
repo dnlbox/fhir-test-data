@@ -1,6 +1,6 @@
 # Spec 09 — Bundle builder
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
