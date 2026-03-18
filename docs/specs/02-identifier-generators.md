@@ -1,6 +1,6 @@
 # Spec 02 — Identifier generators
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
