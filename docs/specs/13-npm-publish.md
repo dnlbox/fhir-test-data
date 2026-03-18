@@ -1,6 +1,6 @@
 # Spec 13 — npm publish
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
