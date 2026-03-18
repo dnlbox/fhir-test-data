@@ -1,6 +1,6 @@
 # Spec 10 — CLI
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
