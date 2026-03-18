@@ -1,4 +1,8 @@
-import { nirDefinition, rppsDefinition } from "../../core/generators/identifiers.js";
+import {
+  nirDefinition,
+  rppsDefinition,
+  finessDefinition,
+} from "../../core/generators/identifiers.js";
 import { frAddressTemplate } from "./addresses.js";
 import { frNamePool } from "./names.js";
 import type { LocaleDefinition } from "../../core/types.js";
@@ -8,7 +12,7 @@ export const frLocale: LocaleDefinition = {
   name: "France",
   patientIdentifiers: [nirDefinition],
   practitionerIdentifiers: [rppsDefinition],
-  organizationIdentifiers: [],
+  organizationIdentifiers: [finessDefinition],
   address: frAddressTemplate,
   names: frNamePool,
 };

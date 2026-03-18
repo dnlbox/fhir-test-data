@@ -135,6 +135,20 @@ export const hpiiDefinition: IdentifierDefinition = {
   },
 };
 
+export const hpioDefinition: IdentifierDefinition = {
+  system: "http://ns.electronichealth.net.au/id/hi/hpio/1.0",
+  name: "Healthcare Provider Identifier — Organisation (HPI-O)",
+  generate(rng: RandomFn): string {
+    const prefix = "800362";
+    const body = randomDigits(9, rng);
+    const fifteen = prefix + body;
+    return fifteen + luhnCheckDigit(fifteen);
+  },
+  validate(value: string): boolean {
+    return /^\d{16}$/.test(value) && value.startsWith("800362") && luhnValidate(value);
+  },
+};
+
 // ---------------------------------------------------------------------------
 // India
 // ---------------------------------------------------------------------------
@@ -260,6 +274,19 @@ export const nirDefinition: IdentifierDefinition = {
   validate: modulus97Validate,
 };
 
+export const finessDefinition: IdentifierDefinition = {
+  system: "https://annuaire.sante.fr/finess",
+  name: "FINESS (Fichier national des établissements sanitaires et sociaux)",
+  generate(rng: RandomFn): string {
+    // 9 digits: 2-digit department + 7 remaining
+    const dept = (randomInt(1, 95, rng)).toString().padStart(2, "0");
+    return dept + randomDigits(7, rng);
+  },
+  validate(value: string): boolean {
+    return /^\d{9}$/.test(value);
+  },
+};
+
 export const rppsDefinition: IdentifierDefinition = {
   system: "https://annuaire.sante.fr",
   name: "RPPS Number",
@@ -288,6 +315,17 @@ export const bsnDefinition: IdentifierDefinition = {
     }
   },
   validate: elevenProefValidate,
+};
+
+export const agbCodeDefinition: IdentifierDefinition = {
+  system: "http://fhir.nl/fhir/NamingSystem/agb-z",
+  name: "AGB-Z Code",
+  generate(rng: RandomFn): string {
+    return randomDigits(8, rng);
+  },
+  validate(value: string): boolean {
+    return /^\d{8}$/.test(value);
+  },
 };
 
 export const uziNumberDefinition: IdentifierDefinition = {

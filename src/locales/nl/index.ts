@@ -1,4 +1,8 @@
-import { bsnDefinition, uziNumberDefinition } from "../../core/generators/identifiers.js";
+import {
+  bsnDefinition,
+  uziNumberDefinition,
+  agbCodeDefinition,
+} from "../../core/generators/identifiers.js";
 import { nlAddressTemplate } from "./addresses.js";
 import { nlNamePool } from "./names.js";
 import type { LocaleDefinition } from "../../core/types.js";
@@ -8,7 +12,7 @@ export const nlLocale: LocaleDefinition = {
   name: "Netherlands",
   patientIdentifiers: [bsnDefinition],
   practitionerIdentifiers: [uziNumberDefinition],
-  organizationIdentifiers: [],
+  organizationIdentifiers: [agbCodeDefinition],
   address: nlAddressTemplate,
   names: nlNamePool,
 };
