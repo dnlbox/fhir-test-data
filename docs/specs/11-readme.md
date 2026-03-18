@@ -1,6 +1,6 @@
 # Spec 11 — README
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
