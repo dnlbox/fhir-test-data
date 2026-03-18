@@ -1,6 +1,6 @@
 # Spec 06 — Practitioner builder
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
