@@ -1,6 +1,6 @@
 # Spec 08 — Clinical resource builders
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
