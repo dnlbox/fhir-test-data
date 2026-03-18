@@ -1,6 +1,6 @@
 # Spec 04 — Name generators
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
