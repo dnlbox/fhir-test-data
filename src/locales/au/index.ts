@@ -2,6 +2,7 @@ import {
   ihiDefinition,
   medicareNumberDefinition,
   hpiiDefinition,
+  hpioDefinition,
 } from "../../core/generators/identifiers.js";
 import { auAddressTemplate } from "./addresses.js";
 import { auNamePool } from "./names.js";
@@ -12,7 +13,7 @@ export const auLocale: LocaleDefinition = {
   name: "Australia",
   patientIdentifiers: [ihiDefinition, medicareNumberDefinition],
   practitionerIdentifiers: [hpiiDefinition],
-  organizationIdentifiers: [],
+  organizationIdentifiers: [hpioDefinition],
   address: auAddressTemplate,
   names: auNamePool,
 };

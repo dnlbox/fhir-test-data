@@ -12,7 +12,7 @@ export const usLocale: LocaleDefinition = {
   name: "United States",
   patientIdentifiers: [ssnDefinition, mrnDefinition],
   practitionerIdentifiers: [npiDefinition],
-  organizationIdentifiers: [],
+  organizationIdentifiers: [npiDefinition],
   address: usAddressTemplate,
   names: usNamePool,
 };

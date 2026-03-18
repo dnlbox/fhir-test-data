@@ -1,6 +1,6 @@
 # Spec 07 — Organization builder
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
