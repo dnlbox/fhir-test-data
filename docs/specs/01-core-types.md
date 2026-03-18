@@ -1,6 +1,6 @@
 # Spec 01 — Core types
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 

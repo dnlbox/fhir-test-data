@@ -1,6 +1,6 @@
 # Spec 00 — Project setup
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
