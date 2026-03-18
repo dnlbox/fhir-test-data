@@ -1,6 +1,6 @@
 # Spec 05 — Patient builder
 
-**Status:** open
+**Status:** complete
 
 ## Goal
 
