@@ -1,8 +1,9 @@
-import type { FhirResource, Locale, RandomFn } from "@/core/types.js";
+import type { FhirResource, FhirVersion, Locale, RandomFn } from "@/core/types.js";
 import { createRng, pickRandom } from "@/core/generators/rng.js";
 import { generateName } from "@/core/generators/names.js";
 import { generateUuidV4, deepMerge } from "./utils.js";
 import { getLocale } from "@/locales/index.js";
+import { adaptToVersion } from "./version-adapters.js";
 
 // ---------------------------------------------------------------------------
 // Locale-appropriate title/prefix
@@ -17,6 +18,12 @@ const TITLE_BY_LOCALE: Record<Locale, string> = {
   fr: "Dr",
   nl: "Dr.",
   in: "Dr.",
+  jp: "Dr.",
+  kr: "Dr.",
+  sg: "Dr.",
+  br: "Dr.",
+  mx: "Dr.",
+  za: "Dr.",
 };
 
 // ---------------------------------------------------------------------------
@@ -86,6 +93,7 @@ export interface PractitionerBuilder {
   locale(locale: Locale): PractitionerBuilder;
   count(count: number): PractitionerBuilder;
   seed(seed: number): PractitionerBuilder;
+  fhirVersion(version: FhirVersion): PractitionerBuilder;
   overrides(overrides: Record<string, unknown>): PractitionerBuilder;
   build(): FhirResource[];
 }
@@ -94,6 +102,7 @@ interface PractitionerBuilderState {
   locale: Locale;
   count: number;
   seed: number;
+  fhirVersion: FhirVersion;
   overrideMap: Record<string, unknown>;
 }
 
@@ -102,6 +111,7 @@ function makeBuilder(state: PractitionerBuilderState): PractitionerBuilder {
     locale(loc: Locale):  PractitionerBuilder { return makeBuilder({ ...state, locale: loc }); },
     count(n: number):     PractitionerBuilder { return makeBuilder({ ...state, count: n }); },
     seed(s: number):      PractitionerBuilder { return makeBuilder({ ...state, seed: s }); },
+    fhirVersion(v: FhirVersion): PractitionerBuilder { return makeBuilder({ ...state, fhirVersion: v }); },
     overrides(o: Record<string, unknown>): PractitionerBuilder {
       return makeBuilder({ ...state, overrideMap: o });
     },
@@ -109,7 +119,7 @@ function makeBuilder(state: PractitionerBuilderState): PractitionerBuilder {
       const rng = createRng(state.seed);
       const hasOverrides = Object.keys(state.overrideMap).length > 0;
       return Array.from({ length: state.count }, () => {
-        const practitioner = buildPractitioner(state.locale, rng);
+        const practitioner = adaptToVersion(buildPractitioner(state.locale, rng), state.fhirVersion);
         return hasOverrides
           ? deepMerge(practitioner as Record<string, unknown>, state.overrideMap) as FhirResource
           : practitioner;
@@ -120,5 +130,5 @@ function makeBuilder(state: PractitionerBuilderState): PractitionerBuilder {
 
 /** Create a new PractitionerBuilder with default options. */
 export function createPractitionerBuilder(): PractitionerBuilder {
-  return makeBuilder({ locale: "us", count: 1, seed: 0, overrideMap: {} });
+  return makeBuilder({ locale: "us", count: 1, seed: 0, fhirVersion: "R4", overrideMap: {} });
 }

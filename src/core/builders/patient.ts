@@ -1,9 +1,10 @@
-import type { FhirResource, Locale, RandomFn } from "@/core/types.js";
+import type { FhirResource, FhirVersion, Locale, RandomFn } from "@/core/types.js";
 import { createRng, pickRandom, randomInt } from "@/core/generators/rng.js";
 import { generateAddress } from "@/core/generators/addresses.js";
 import { generateName } from "@/core/generators/names.js";
 import { generateUuidV4, deepMerge, generateDate } from "./utils.js";
 import { getLocale } from "@/locales/index.js";
+import { adaptToVersion } from "./version-adapters.js";
 
 // ---------------------------------------------------------------------------
 // Gender
@@ -43,6 +44,12 @@ const PHONE_FORMATTERS: Record<Locale, PhoneFormatter> = {
   fr:  (rng) => `06 ${randomInt(10, 99, rng)} ${randomInt(10, 99, rng)} ${randomInt(10, 99, rng)} ${randomInt(10, 99, rng)}`,
   nl:  (rng) => `06 ${randomInt(10000000, 99999999, rng)}`,
   in:  (rng) => `09${randomInt(10, 99, rng)} ${randomInt(1000000, 9999999, rng)}`,
+  jp:  (rng) => `0${randomInt(3, 9, rng)}-${randomInt(1000, 9999, rng)}-${randomInt(1000, 9999, rng)}`,
+  kr:  (rng) => `0${randomInt(10, 99, rng)}-${randomInt(1000, 9999, rng)}-${randomInt(1000, 9999, rng)}`,
+  sg:  (rng) => `${randomInt(6000, 9999, rng)} ${randomInt(1000, 9999, rng)}`,
+  br:  (rng) => `(${randomInt(11, 99, rng)}) ${randomInt(91000, 99999, rng)}-${randomInt(1000, 9999, rng)}`,
+  mx:  (rng) => `55 ${randomInt(1000, 9999, rng)} ${randomInt(1000, 9999, rng)}`,
+  za:  (rng) => `0${randomInt(10, 99, rng)} ${randomInt(100, 999, rng)} ${randomInt(1000, 9999, rng)}`,
 };
 
 // ---------------------------------------------------------------------------
@@ -58,6 +65,12 @@ const LOCALE_LANGUAGE: Record<Locale, string> = {
   fr: "fr",
   nl: "nl",
   in: "hi",
+  jp: "ja",
+  kr: "ko",
+  sg: "en-SG",
+  br: "pt-BR",
+  mx: "es-MX",
+  za: "en-ZA",
 };
 
 // ---------------------------------------------------------------------------
@@ -78,8 +91,13 @@ function buildPatient(locale: Locale, rng: RandomFn): FhirResource {
   const familyName = generatedName.family;
   const email = `${givenName.toLowerCase()}.${familyName.toLowerCase()}@example.com`;
 
+  // birthDate must be generated before the identifier so context (including
+  // birthYear) can be forwarded to generators that encode demographic data (e.g. KR RRN).
+  const birthDate = generateDate(1940, 2010, rng);
+  const birthYear = Number.parseInt(birthDate.slice(0, 4), 10);
+
   const identifierDef = pickRandom(localeDef.patientIdentifiers, rng);
-  const identifierValue = identifierDef.generate(rng);
+  const identifierValue = identifierDef.generate(rng, { gender, birthYear });
 
   const nameEntry: Record<string, unknown> = {
     use: "official",
@@ -117,7 +135,7 @@ function buildPatient(locale: Locale, rng: RandomFn): FhirResource {
       { system: "email", value: email, use: "home" },
     ],
     gender,
-    birthDate: generateDate(1940, 2010, rng),
+    birthDate,
     address: [addressEntry],
     communication: [
       {
@@ -137,6 +155,7 @@ export interface PatientBuilder {
   locale(locale: Locale): PatientBuilder;
   count(count: number): PatientBuilder;
   seed(seed: number): PatientBuilder;
+  fhirVersion(version: FhirVersion): PatientBuilder;
   overrides(overrides: Record<string, unknown>): PatientBuilder;
   build(): FhirResource[];
 }
@@ -145,6 +164,7 @@ interface PatientBuilderState {
   locale: Locale;
   count: number;
   seed: number;
+  fhirVersion: FhirVersion;
   overrideMap: Record<string, unknown>;
 }
 
@@ -153,6 +173,7 @@ function makeBuilder(state: PatientBuilderState): PatientBuilder {
     locale(loc: Locale): PatientBuilder { return makeBuilder({ ...state, locale: loc }); },
     count(n: number):    PatientBuilder { return makeBuilder({ ...state, count: n }); },
     seed(s: number):     PatientBuilder { return makeBuilder({ ...state, seed: s }); },
+    fhirVersion(v: FhirVersion): PatientBuilder { return makeBuilder({ ...state, fhirVersion: v }); },
     overrides(o: Record<string, unknown>): PatientBuilder {
       return makeBuilder({ ...state, overrideMap: o });
     },
@@ -160,7 +181,7 @@ function makeBuilder(state: PatientBuilderState): PatientBuilder {
       const rng = createRng(state.seed);
       const hasOverrides = Object.keys(state.overrideMap).length > 0;
       return Array.from({ length: state.count }, () => {
-        const patient = buildPatient(state.locale, rng);
+        const patient = adaptToVersion(buildPatient(state.locale, rng), state.fhirVersion);
         return hasOverrides
           ? deepMerge(patient as Record<string, unknown>, state.overrideMap) as FhirResource
           : patient;
@@ -171,5 +192,5 @@ function makeBuilder(state: PatientBuilderState): PatientBuilder {
 
 /** Create a new PatientBuilder with default options. */
 export function createPatientBuilder(): PatientBuilder {
-  return makeBuilder({ locale: "us", count: 1, seed: 0, overrideMap: {} });
+  return makeBuilder({ locale: "us", count: 1, seed: 0, fhirVersion: "R4", overrideMap: {} });
 }

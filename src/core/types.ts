@@ -30,7 +30,7 @@ export type FhirVersion = (typeof SUPPORTED_FHIR_VERSIONS)[number];
 // Locales
 // ---------------------------------------------------------------------------
 
-export const SUPPORTED_LOCALES = ["us", "uk", "au", "ca", "de", "fr", "nl", "in"] as const;
+export const SUPPORTED_LOCALES = ["us", "uk", "au", "ca", "de", "fr", "nl", "in", "jp", "kr", "sg", "br", "mx", "za"] as const;
 
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
@@ -83,13 +83,28 @@ export interface ResourceBuilder<T extends FhirResource> {
 /** A deterministic random number generator function. Returns [0, 1). */
 export type RandomFn = () => number;
 
+/**
+ * Optional context passed from a resource builder to an identifier generator.
+ * Identifiers that encode demographic data (e.g. Korean RRN) use this to stay
+ * internally consistent with the generated resource. All other generators ignore it.
+ */
+export interface IdentifierContext {
+  gender?: "male" | "female" | "other" | "unknown";
+  birthYear?: number;
+}
+
 export interface IdentifierDefinition {
   /** FHIR system URI (e.g., "https://fhir.nhs.uk/Id/nhs-number") */
   system: string;
   /** Human-readable name (e.g., "NHS Number") */
   name: string;
-  /** Generate a valid identifier value */
-  generate: (rng: RandomFn) => string;
+  /**
+   * Generate a valid identifier value.
+   * `context` is provided by the patient builder when demographic data is
+   * available. Implementations that don't need it can safely ignore the
+   * second parameter — TypeScript function arity compatibility allows this.
+   */
+  generate: (rng: RandomFn, context?: IdentifierContext) => string;
   /** Validate an identifier value */
   validate: (value: string) => boolean;
 }

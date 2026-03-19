@@ -232,8 +232,8 @@ describe("All locales — 10 patients", () => {
 // ---------------------------------------------------------------------------
 
 describe("Locale registry", () => {
-  it("getAllLocales returns 8 locales", () => {
-    expect(getAllLocales()).toHaveLength(8);
+  it("getAllLocales returns all supported locales", () => {
+    expect(getAllLocales()).toHaveLength(SUPPORTED_LOCALES.length);
   });
 
   it("getLocale returns correct locale for each code", () => {

@@ -260,3 +260,30 @@ describe("Determinism", () => {
     expect(a).not.toEqual(b);
   });
 });
+
+// ---------------------------------------------------------------------------
+// fhirVersion propagation
+// ---------------------------------------------------------------------------
+
+describe("Bundle fhirVersion propagation", () => {
+  it("R5 bundle contains no MedicationStatement entries", () => {
+    const [b] = createBundleBuilder().seed(50).clinicalResourcesPerPatient(5).fhirVersion("R5").build();
+    const bundle = b as Record<string, unknown>;
+    const medStatements = allResourcesByType(bundle, "MedicationStatement");
+    expect(medStatements).toHaveLength(0);
+  });
+
+  it("R5 bundle contains MedicationUsage entries", () => {
+    const [b] = createBundleBuilder().seed(50).clinicalResourcesPerPatient(5).fhirVersion("R5").build();
+    const bundle = b as Record<string, unknown>;
+    const medUsages = allResourcesByType(bundle, "MedicationUsage");
+    expect(medUsages.length).toBeGreaterThan(0);
+  });
+
+  it("R4 bundle (default) contains MedicationStatement entries", () => {
+    const [b] = createBundleBuilder().seed(50).clinicalResourcesPerPatient(5).build();
+    const bundle = b as Record<string, unknown>;
+    const medStatements = allResourcesByType(bundle, "MedicationStatement");
+    expect(medStatements.length).toBeGreaterThan(0);
+  });
+});

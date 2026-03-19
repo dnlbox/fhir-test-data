@@ -74,3 +74,58 @@ describe("AllergyIntolerance determinism", () => {
     expect(a).not.toEqual(b);
   });
 });
+
+describe("AllergyIntolerance — R5 type field", () => {
+  it("type is a CodeableConcept object for R5", () => {
+    const [ai] = createAllergyIntoleranceBuilder().seed(1).fhirVersion("R5").build();
+    const type = ai?.["type"];
+    expect(typeof type).toBe("object");
+    expect(Array.isArray((type as Record<string, unknown>)?.["coding"])).toBe(true);
+  });
+
+  it("type coding preserves the original code value", () => {
+    const [r4] = createAllergyIntoleranceBuilder().seed(1).fhirVersion("R4").build();
+    const [r5] = createAllergyIntoleranceBuilder().seed(1).fhirVersion("R5").build();
+    const r4Code = r4?.["type"] as string;
+    const r5Type = r5?.["type"] as Record<string, unknown>;
+    const r5Coding = (r5Type?.["coding"] as Array<Record<string, unknown>>)[0];
+    expect(r5Coding?.["code"]).toBe(r4Code);
+  });
+
+  it("type is a plain string for R4", () => {
+    const [ai] = createAllergyIntoleranceBuilder().seed(1).fhirVersion("R4").build();
+    expect(typeof ai?.["type"]).toBe("string");
+  });
+
+  it("R4B type field is same as R4", () => {
+    const [r4] = createAllergyIntoleranceBuilder().seed(1).fhirVersion("R4").build();
+    const [r4b] = createAllergyIntoleranceBuilder().seed(1).fhirVersion("R4B").build();
+    expect(r4).toEqual(r4b);
+  });
+});
+
+describe("AllergyIntolerance — R5 subject field", () => {
+  it("R5 uses 'subject' instead of 'patient'", () => {
+    const [ai] = createAllergyIntoleranceBuilder().seed(1).fhirVersion("R5").build();
+    expect(ai).not.toHaveProperty("patient");
+    expect(typeof ai?.["subject"]).toBe("object");
+  });
+
+  it("R5 subject.reference starts with Patient/", () => {
+    const [ai] = createAllergyIntoleranceBuilder().seed(2).fhirVersion("R5").build();
+    const subject = ai?.["subject"] as Record<string, unknown>;
+    expect((subject?.["reference"] as string).startsWith("Patient/")).toBe(true);
+  });
+
+  it("R4 still uses 'patient', not 'subject'", () => {
+    const [ai] = createAllergyIntoleranceBuilder().seed(1).fhirVersion("R4").build();
+    expect(ai).toHaveProperty("patient");
+    expect(ai).not.toHaveProperty("subject");
+  });
+
+  it("R4B still uses 'patient', not 'subject'", () => {
+    const [ai] = createAllergyIntoleranceBuilder().seed(1).fhirVersion("R4B").build();
+    expect(ai).toHaveProperty("patient");
+    expect(ai).not.toHaveProperty("subject");
+  });
+});

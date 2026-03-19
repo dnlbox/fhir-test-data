@@ -154,7 +154,7 @@ describe("generate to stdout", () => {
     }
     const lines = cap.out.join("").trim().split("\n").filter(Boolean);
     // Each resource type outputs on its own line when count=1
-    expect(lines.length).toBeGreaterThanOrEqual(8);
+    expect(lines.length).toBeGreaterThanOrEqual(9);
   });
 });
 
@@ -301,5 +301,116 @@ describe("determinism via CLI", () => {
     const { out: out1 } = runCLI(["generate", "patient", "--seed", "1"]);
     const { out: out2 } = runCLI(["generate", "patient", "--seed", "2"]);
     expect(out1).not.toBe(out2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// --fhir-version flag
+// ---------------------------------------------------------------------------
+
+describe("--fhir-version flag", () => {
+  it("R5 medication-statement produces MedicationUsage", () => {
+    const { out } = runCLI([
+      "generate", "medication-statement", "--seed", "1", "--fhir-version", "R5",
+    ]);
+    const r = JSON.parse(out) as Record<string, unknown>;
+    expect(r["resourceType"]).toBe("MedicationUsage");
+  });
+
+  it("R4 (default) medication-statement produces MedicationStatement", () => {
+    const { out } = runCLI(["generate", "medication-statement", "--seed", "1"]);
+    const r = JSON.parse(out) as Record<string, unknown>;
+    expect(r["resourceType"]).toBe("MedicationStatement");
+  });
+
+  it("R4B produces same structure as R4 for patient", () => {
+    const { out: r4Out } = runCLI(["generate", "patient", "--seed", "5", "--fhir-version", "R4"]);
+    const { out: r4bOut } = runCLI(["generate", "patient", "--seed", "5", "--fhir-version", "R4B"]);
+    expect(JSON.parse(r4Out)).toEqual(JSON.parse(r4bOut));
+  });
+
+  it("unknown fhir-version exits 1 and writes to stderr", () => {
+    let threw = false;
+    let errOutput = "";
+    try {
+      runCLI(["generate", "patient", "--fhir-version", "R6"]);
+    } catch (e) {
+      threw = true;
+      if (e instanceof CLIError) errOutput = e.err;
+    }
+    expect(threw).toBe(true);
+    expect(exitCode).toBe(1);
+    expect(errOutput).toContain("unknown FHIR version");
+  });
+
+  it("--fhir-version R5 with --seed is deterministic", () => {
+    const { out: out1 } = runCLI(["generate", "patient", "--locale", "uk", "--seed", "42", "--fhir-version", "R5"]);
+    const { out: out2 } = runCLI(["generate", "patient", "--locale", "uk", "--seed", "42", "--fhir-version", "R5"]);
+    expect(out1).toBe(out2);
+  });
+});
+
+describe("practitioner-role resource", () => {
+  it("generates a PractitionerRole resource", () => {
+    const { out } = runCLI(["generate", "practitioner-role", "--seed", "42"]);
+    const parsed = JSON.parse(out);
+    expect(parsed["resourceType"]).toBe("PractitionerRole");
+  });
+
+  it("generate all includes PractitionerRole", () => {
+    const cap = createCapture();
+    const program = new Command();
+    program.exitOverride();
+    registerGenerateCommand(program);
+    try {
+      program.parse(["node", "fhir-test-data", "generate", "all", "--seed", "1", "--no-pretty"]);
+    } finally {
+      cap.restore();
+    }
+    const lines = cap.out.join("").trim().split("\n").filter(Boolean);
+    const types = lines.map((l) => (JSON.parse(l) as Record<string, unknown>)["resourceType"]);
+    expect(types).toContain("PractitionerRole");
+  });
+});
+
+describe("NDJSON stdout — spec 18", () => {
+  it("generate all emits one compact JSON object per line", () => {
+    const cap = createCapture();
+    const program = new Command();
+    program.exitOverride();
+    registerGenerateCommand(program);
+    try {
+      program.parse(["node", "fhir-test-data", "generate", "all", "--seed", "1"]);
+    } finally {
+      cap.restore();
+    }
+    const lines = cap.out.join("").trim().split("\n").filter(Boolean);
+    // Each line must be valid JSON parseable on its own
+    for (const line of lines) {
+      expect(() => JSON.parse(line)).not.toThrow();
+    }
+  });
+
+  it("generate all with --pretty still emits one compact JSON object per line", () => {
+    const cap = createCapture();
+    const program = new Command();
+    program.exitOverride();
+    registerGenerateCommand(program);
+    try {
+      program.parse(["node", "fhir-test-data", "generate", "all", "--seed", "1", "--pretty"]);
+    } finally {
+      cap.restore();
+    }
+    const lines = cap.out.join("").trim().split("\n").filter(Boolean);
+    for (const line of lines) {
+      expect(() => JSON.parse(line)).not.toThrow();
+    }
+  });
+
+  it("single resource with --pretty still pretty-prints", () => {
+    const { out } = runCLI(["generate", "patient", "--seed", "1", "--pretty"]);
+    // Pretty-printed output has newlines (more than 1 line when parsed)
+    expect(out.split("\n").length).toBeGreaterThan(2);
+    expect(() => JSON.parse(out)).not.toThrow();
   });
 });

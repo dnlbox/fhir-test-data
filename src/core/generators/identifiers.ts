@@ -3,7 +3,7 @@
  * Locales import these and include them in their LocaleDefinition.
  * All generators use only the provided RandomFn — no Math.random().
  */
-import type { IdentifierDefinition, RandomFn } from "@/core/types.js";
+import type { IdentifierContext, IdentifierDefinition, RandomFn } from "@/core/types.js";
 import {
   luhnCheckDigit,
   luhnValidate,
@@ -16,6 +16,12 @@ import {
   modulus97Key,
   modulus97Validate,
   modulus10CheckDigit,
+  rrnCheckDigit,
+  rrnValidate,
+  nricCheckLetter,
+  nricValidate,
+  cpfCheckDigits,
+  cpfValidate,
 } from "./check-digits.js";
 import { randomDigits, randomInt, pickRandom } from "./rng.js";
 
@@ -401,5 +407,305 @@ export const mrnDefinition: IdentifierDefinition = {
   },
   validate(value: string): boolean {
     return /^[A-Z]{2}\d{6}$/.test(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Japan
+// ---------------------------------------------------------------------------
+
+export const jpHospitalMrnDefinition: IdentifierDefinition = {
+  system: "http://jpfhir.jp/fhir/core/NamingSystem/jp-hospitalPatientId",
+  name: "Japanese Hospital Patient ID",
+  generate(rng: RandomFn): string {
+    return randomDigits(10, rng);
+  },
+  validate(value: string): boolean {
+    return /^\d{10}$/.test(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// South Korea
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Korean RRN gender digit rules:
+//   1 = male,   1900–1999
+//   2 = female, 1900–1999
+//   3 = male,   2000–2099
+//   4 = female, 2000–2099
+// ---------------------------------------------------------------------------
+
+const RRN_GENDER_DIGIT: Record<string, string> = {
+  "male-old":    "1",
+  "female-old":  "2",
+  "male-new":    "3",
+  "female-new":  "4",
+};
+
+export const krRrnDefinition: IdentifierDefinition = {
+  system: "http://www.mohw.go.kr/fhir/NamingSystem/rrn",
+  name: "Resident Registration Number (RRN)",
+  generate(rng: RandomFn, context?: IdentifierContext): string {
+    // Birth year: use builder-supplied value when available, otherwise generate.
+    // "Otherwise" preserves the original rng call order for standalone use.
+    const hasContext = context?.birthYear !== undefined && context.gender !== undefined;
+    const fullYear = hasContext ? (context.birthYear as number) : (randomInt(70, 99, rng) + 1900);
+    const yy = (fullYear % 100).toString().padStart(2, "0");
+
+    const month = randomInt(1, 12, rng).toString().padStart(2, "0");
+    const day = randomInt(1, 28, rng).toString().padStart(2, "0");
+
+    let genderDigit: string;
+    if (hasContext) {
+      const century = fullYear >= 2000 ? "new" : "old";
+      const gender = context.gender as string;
+      // 'other' / 'unknown' fall back to neutral default (male 1900s = "1")
+      genderDigit = RRN_GENDER_DIGIT[`${gender}-${century}`] ?? "1";
+    } else {
+      // Standalone usage: pick randomly so format tests still pass
+      genderDigit = pickRandom(["1", "2"], rng);
+    }
+
+    const seq = randomDigits(5, rng);
+    const twelve = yy + month + day + genderDigit + seq;
+    const check = rrnCheckDigit(twelve);
+    return `${yy}${month}${day}-${genderDigit}${seq}${check}`;
+  },
+  validate(value: string): boolean {
+    if (!/^\d{6}-\d{7}$/.test(value)) return false;
+    return rrnValidate(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Singapore
+// ---------------------------------------------------------------------------
+
+const NRIC_PREFIXES = ["S", "S", "S", "T", "T", "F", "G"] as const;
+
+export const sgNricDefinition: IdentifierDefinition = {
+  system: "http://hl7.org.sg/fhir/NamingSystem/nric-fin",
+  name: "NRIC / FIN",
+  generate(rng: RandomFn): string {
+    const prefix = pickRandom([...NRIC_PREFIXES], rng);
+    const digits = randomDigits(7, rng);
+    const check = nricCheckLetter(prefix, digits);
+    return `${prefix}${digits}${check}`;
+  },
+  validate(value: string): boolean {
+    return nricValidate(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Brazil
+// ---------------------------------------------------------------------------
+
+export const brCpfDefinition: IdentifierDefinition = {
+  system: "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cpf",
+  name: "CPF (Cadastro de Pessoas Físicas)",
+  generate(rng: RandomFn): string {
+    for (;;) {
+      const nine = randomDigits(9, rng);
+      // Reject all-same-digit
+      if (/^(\d)\1{8}$/.test(nine)) continue;
+      const check = cpfCheckDigits(nine);
+      const raw = nine + check;
+      return raw.slice(0, 3) + "." + raw.slice(3, 6) + "." + raw.slice(6, 9) + "-" + raw.slice(9, 11);
+    }
+  },
+  validate: cpfValidate,
+};
+
+// ---------------------------------------------------------------------------
+// Mexico
+// ---------------------------------------------------------------------------
+
+export const mxCurpDefinition: IdentifierDefinition = {
+  system: "http://www.salud.gob.mx/fhir/NamingSystem/curp",
+  name: "CURP (Clave Única de Registro de Población)",
+  generate(rng: RandomFn): string {
+    // Format: 4 letters + 6-digit DOB (YYMMDD) + gender (H/M) + 2-letter state + 3 consonants + 1 alphanum + 1 check
+    const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const CONSONANTS = "BCDFGHJKLMNPQRSTVWXYZ";
+    const MX_STATES = ["AS","BC","BS","CC","CL","CM","CS","CH","DF","DG","GT","GR","HG","JC","MC","MN","MS","NT","NL","OC","PL","QT","QR","SP","SL","SR","TC","TS","TL","VZ","YN","ZS"];
+    const ALPHANUM = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const CURP_CHECK = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    const l1 = pickRandom([...LETTERS], rng);
+    const l2 = pickRandom([...LETTERS], rng);
+    const l3 = pickRandom([...LETTERS], rng);
+    const l4 = pickRandom([...LETTERS], rng);
+    const year = randomInt(50, 99, rng).toString().padStart(2, "0");
+    const month = randomInt(1, 12, rng).toString().padStart(2, "0");
+    const day = randomInt(1, 28, rng).toString().padStart(2, "0");
+    const gender = pickRandom(["H", "M"], rng);
+    const state = pickRandom(MX_STATES, rng);
+    const c1 = pickRandom([...CONSONANTS], rng);
+    const c2 = pickRandom([...CONSONANTS], rng);
+    const c3 = pickRandom([...CONSONANTS], rng);
+    const an = pickRandom([...ALPHANUM], rng);
+    // check digit: simple index-based (position 0=A,1=B,...,9=9, etc. using CURP_CHECK)
+    const body = l1 + l2 + l3 + l4 + year + month + day + gender + state + c1 + c2 + c3 + an;
+    let sum = 0;
+    for (let i = 0; i < 17; i++) {
+      const idx = CURP_CHECK.indexOf(body[i] ?? "");
+      sum += (idx >= 0 ? idx : 0) * (18 - i);
+    }
+    const checkIdx = (10 - (sum % 10)) % 10;
+    return body + checkIdx.toString();
+  },
+  validate(value: string): boolean {
+    return /^[A-Z]{4}\d{6}[HM][A-Z]{2}[BCDFGHJKLMNPQRSTVWXYZ]{3}[0-9A-Z]\d$/.test(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// South Africa
+// ---------------------------------------------------------------------------
+
+export const zaIdDefinition: IdentifierDefinition = {
+  system: "http://www.rsaidentity.co.za/fhir/NamingSystem/said",
+  name: "South African ID Number",
+  generate(rng: RandomFn): string {
+    // Format: YYMMDD + G (gender: 0-4 female, 5-9 male) + SSS + C(0) + A(8) + Z(Luhn)
+    const year = randomInt(50, 99, rng).toString().padStart(2, "0");
+    const month = randomInt(1, 12, rng).toString().padStart(2, "0");
+    const day = randomInt(1, 28, rng).toString().padStart(2, "0");
+    const genderDigit = pickRandom([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], rng).toString();
+    const seq = randomInt(0, 999, rng).toString().padStart(3, "0");
+    const citizenship = "0";
+    const race = "8";
+    const twelve = year + month + day + genderDigit + seq + citizenship + race;
+    const check = luhnCheckDigit(twelve);
+    return twelve + check;
+  },
+  validate(value: string): boolean {
+    return /^\d{13}$/.test(value) && luhnValidate(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Practitioner identifiers — Canada
+// ---------------------------------------------------------------------------
+
+export const cpsoPractitionerDefinition: IdentifierDefinition = {
+  system: "https://www.cpso.on.ca/",
+  name: "CPSO/Provincial Licence Number",
+  generate(rng: RandomFn): string {
+    return randomDigits(6, rng);
+  },
+  validate(value: string): boolean {
+    return /^\d{5,6}$/.test(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Practitioner identifiers — India
+// ---------------------------------------------------------------------------
+
+export const nmcRegistrationDefinition: IdentifierDefinition = {
+  system: "https://www.nmc.org.in/",
+  name: "NMC Registration Number",
+  generate(rng: RandomFn): string {
+    return randomDigits(6, rng);
+  },
+  validate(value: string): boolean {
+    return /^\d{6}$/.test(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Practitioner identifiers — Japan
+// ---------------------------------------------------------------------------
+
+export const jmpDoctorLicenseDefinition: IdentifierDefinition = {
+  system: "http://jpfhir.jp/fhir/core/NamingSystem/jp-doctor-license",
+  name: "JMPC Physician Registration Number",
+  generate(rng: RandomFn): string {
+    return randomDigits(6, rng);
+  },
+  validate(value: string): boolean {
+    return /^\d{6}$/.test(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Practitioner identifiers — South Korea
+// ---------------------------------------------------------------------------
+
+export const mohwDoctorLicenseDefinition: IdentifierDefinition = {
+  system: "http://www.mohw.go.kr/fhir/NamingSystem/doctor-license",
+  name: "Medical Licence Number (보건복지부)",
+  generate(rng: RandomFn): string {
+    return randomDigits(5, rng);
+  },
+  validate(value: string): boolean {
+    return /^\d{5}$/.test(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Practitioner identifiers — Singapore
+// ---------------------------------------------------------------------------
+
+export const smcRegistrationDefinition: IdentifierDefinition = {
+  system: "http://www.smc.gov.sg/fhir/NamingSystem/smcr",
+  name: "Singapore Medical Council Registration",
+  generate(rng: RandomFn): string {
+    return "M" + randomDigits(5, rng);
+  },
+  validate(value: string): boolean {
+    return /^M\d{5}$/.test(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Practitioner identifiers — Brazil
+// ---------------------------------------------------------------------------
+
+const BR_CRM_STATES = ["SP", "RJ", "MG", "RS", "BA", "PR", "PE", "CE", "GO", "MA"] as const;
+
+export const crmPractitionerDefinition: IdentifierDefinition = {
+  system: "https://www.cfm.org.br/fhir/NamingSystem/crm",
+  name: "CRM (Conselho Regional de Medicina)",
+  generate(rng: RandomFn): string {
+    const state = pickRandom([...BR_CRM_STATES], rng);
+    return `${state}-${randomDigits(5, rng)}`;
+  },
+  validate(value: string): boolean {
+    return /^[A-Z]{2}-\d{5}$/.test(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Practitioner identifiers — Mexico
+// ---------------------------------------------------------------------------
+
+export const cedulaProfesionalDefinition: IdentifierDefinition = {
+  system: "http://www.sep.gob.mx/fhir/NamingSystem/cedula",
+  name: "Cédula Profesional",
+  generate(rng: RandomFn): string {
+    return randomDigits(7, rng);
+  },
+  validate(value: string): boolean {
+    return /^\d{7}$/.test(value);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Practitioner identifiers — South Africa
+// ---------------------------------------------------------------------------
+
+export const hpcsaRegistrationDefinition: IdentifierDefinition = {
+  system: "https://www.hpcsa.co.za/fhir/NamingSystem/hpcsa",
+  name: "HPCSA Registration Number",
+  generate(rng: RandomFn): string {
+    return "MP" + randomDigits(6, rng);
+  },
+  validate(value: string): boolean {
+    return /^MP\d{6}$/.test(value);
   },
 };

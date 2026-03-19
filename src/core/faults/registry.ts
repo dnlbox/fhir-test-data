@@ -24,9 +24,44 @@ const invalidGender: FaultStrategy = (r) => {
   return { ...r, gender: "INVALID_GENDER" };
 };
 
+// Maps each resource type to its primary date field.
+const PRIMARY_DATE_FIELD: Record<string, string> = {
+  Patient:             "birthDate",
+  Observation:         "effectiveDateTime",
+  Condition:           "onsetDateTime",
+  AllergyIntolerance:  "recordedDate",
+  MedicationStatement: "effectiveDateTime",
+  MedicationUsage:     "effectiveDateTime",   // R5 rename of MedicationStatement
+  Immunization:        "occurrenceDateTime",
+};
+
+const DATE_FIELD_SUFFIX_PATTERN = /(?:Date|DateTime)$/;
+
 const malformedDate: FaultStrategy = (r) => {
-  if (!("birthDate" in r)) return r;
-  return { ...r, birthDate: "not-a-date" };
+  const resourceType = r["resourceType"] as string | undefined;
+  const primaryField = resourceType ? PRIMARY_DATE_FIELD[resourceType] : undefined;
+
+  // 1. Primary field lookup: if field exists on the resource, corrupt it.
+  if (primaryField !== undefined && primaryField in r) {
+    return { ...r, [primaryField]: "not-a-date" };
+  }
+
+  // 2. Fallback scan: find first field ending in Date or DateTime and corrupt it.
+  for (const key of Object.keys(r)) {
+    if (DATE_FIELD_SUFFIX_PATTERN.test(key)) {
+      return { ...r, [key]: "not-a-date" };
+    }
+    // Handle Period fields — corrupt .start if present.
+    if (key.endsWith("Period")) {
+      const period = r[key] as Record<string, unknown> | null | undefined;
+      if (period !== null && typeof period === "object" && "start" in period) {
+        return { ...r, [key]: { ...period, start: "not-a-date" } };
+      }
+    }
+  }
+
+  // 3. No recognised date field — silent no-op.
+  return r;
 };
 
 const emptyName: FaultStrategy = (r) => {

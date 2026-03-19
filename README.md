@@ -1,6 +1,6 @@
 # fhir-test-data
 
-Generate valid FHIR R4 test resources with country-aware identifiers.
+Generate valid FHIR R4 / R4B / R5 test resources with country-aware identifiers.
 
 ---
 
@@ -72,6 +72,7 @@ All builders use immutable method chaining. Each method returns a new builder in
 | `.locale(code)` | `"us"` | Locale code from the table above |
 | `.count(n)` | `1` | Number of resources to generate |
 | `.seed(n)` | `0` | Seed for deterministic output |
+| `.fhirVersion(v)` | `"R4"` | FHIR version: `"R4"` \| `"R4B"` \| `"R5"` |
 | `.overrides(obj)` | `{}` | Deep-merged into every generated resource |
 
 ### Patient
@@ -174,13 +175,27 @@ Resource types:
   all                  One of each resource type
 
 Options:
-  --locale <code>    Locale code (default: "us")
-  --count <n>        Number of resources (default: 1)
-  --seed <n>         Deterministic seed
-  --output <dir>     Output directory (one file per resource)
-  --format <fmt>     json | ndjson (default: "json")
-  --pretty           Pretty-print JSON (default for stdout)
-  --no-pretty        Compact JSON
+  --locale <code>          Locale code (default: "us")
+  --count <n>              Number of resources (default: 1)
+  --seed <n>               Deterministic seed
+  --fhir-version <version> FHIR version: R4 | R4B | R5 (default: "R4")
+  --output <dir>           Output directory (one file per resource)
+  --format <fmt>           json | ndjson (default: "json")
+  --pretty                 Pretty-print JSON (default for stdout)
+  --no-pretty              Compact JSON
+```
+
+### FHIR version examples
+
+```bash
+# R5 patient (same locale support, same seed behaviour)
+fhir-test-data generate patient --locale uk --count 3 --seed 42 --fhir-version R5
+
+# R5 bundle — MedicationStatement is emitted as MedicationUsage
+fhir-test-data generate bundle --locale us --seed 1 --fhir-version R5
+
+# Explicit R4B (structurally identical to R4 for all generated resources)
+fhir-test-data generate practitioner --locale de --fhir-version R4B
 ```
 
 ### Examples
@@ -283,7 +298,7 @@ fhir-resource-diff compare ./fixtures/Bundle-001.json ./expected/Bundle.json
 - CLI with JSON/NDJSON output
 
 **Phase 2 — Depth**
-- R4B and R5 resource variants
+- ✅ R4B and R5 resource variants
 - More clinical code value sets
 - IPS (International Patient Summary) structure
 - More locales (JP, SE, NZ, BR)

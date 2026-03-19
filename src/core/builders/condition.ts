@@ -1,8 +1,9 @@
-import type { FhirResource, Locale } from "@/core/types.js";
+import type { FhirResource, FhirVersion, Locale } from "@/core/types.js";
 import { createRng, pickRandom } from "@/core/generators/rng.js";
 import { generateUuidV4, deepMerge, generateDate } from "./utils.js";
 import { COMMON_SNOMED_CONDITIONS } from "@/core/data/snomed-codes.js";
 import type { RandomFn } from "@/core/types.js";
+import { adaptToVersion } from "./version-adapters.js";
 
 // ---------------------------------------------------------------------------
 // Condition resource assembly
@@ -55,6 +56,7 @@ export interface ConditionBuilder {
   count(count: number): ConditionBuilder;
   seed(seed: number): ConditionBuilder;
   subject(patientReference: string): ConditionBuilder;
+  fhirVersion(version: FhirVersion): ConditionBuilder;
   overrides(overrides: Record<string, unknown>): ConditionBuilder;
   build(): FhirResource[];
 }
@@ -63,6 +65,7 @@ interface ConditionBuilderState {
   locale: Locale;
   count: number;
   seed: number;
+  fhirVersion: FhirVersion;
   subjectRef: string | undefined;
   overrideMap: Record<string, unknown>;
 }
@@ -81,6 +84,9 @@ function makeBuilder(state: ConditionBuilderState): ConditionBuilder {
     subject(ref: string): ConditionBuilder {
       return makeBuilder({ ...state, subjectRef: ref });
     },
+    fhirVersion(v: FhirVersion): ConditionBuilder {
+      return makeBuilder({ ...state, fhirVersion: v });
+    },
     overrides(o: Record<string, unknown>): ConditionBuilder {
       return makeBuilder({ ...state, overrideMap: o });
     },
@@ -89,7 +95,7 @@ function makeBuilder(state: ConditionBuilderState): ConditionBuilder {
       const results: FhirResource[] = [];
       for (let i = 0; i < state.count; i++) {
         const subjectRef = state.subjectRef ?? `Patient/${generateUuidV4(rng)}`;
-        const condition = buildCondition(subjectRef, rng);
+        const condition = adaptToVersion(buildCondition(subjectRef, rng), state.fhirVersion);
         if (Object.keys(state.overrideMap).length > 0) {
           results.push(
             deepMerge(condition as Record<string, unknown>, state.overrideMap) as FhirResource,
@@ -109,6 +115,7 @@ export function createConditionBuilder(): ConditionBuilder {
     locale: "us",
     count: 1,
     seed: 0,
+    fhirVersion: "R4",
     subjectRef: undefined,
     overrideMap: {},
   });

@@ -1,4 +1,4 @@
-import type { FhirResource, Locale } from "@/core/types.js";
+import type { FhirResource, FhirVersion, Locale } from "@/core/types.js";
 import { createRng, randomInt } from "@/core/generators/rng.js";
 import { generateUuidV4 } from "./utils.js";
 import { createPatientBuilder } from "./patient.js";
@@ -59,6 +59,7 @@ function buildClinicalResources(
   count: number | undefined,
   patientRef: string,
   practRef: string,
+  fhirVersion: FhirVersion,
   rng: RandomFn,
 ): FhirResource[] {
   const resources: FhirResource[] = [];
@@ -75,18 +76,19 @@ function buildClinicalResources(
           .subject(patientRef)
           .category(cat ?? "vital-signs")
           .seed(seed)
+          .fhirVersion(fhirVersion)
           .build();
         if (obs) {
           resources.push({ ...obs, performer: [{ reference: practRef }] });
         }
       } else if (type === "condition") {
-        const [cond] = createConditionBuilder().subject(patientRef).seed(seed).build();
+        const [cond] = createConditionBuilder().subject(patientRef).seed(seed).fhirVersion(fhirVersion).build();
         if (cond) resources.push(cond);
       } else if (type === "allergy") {
-        const [ai] = createAllergyIntoleranceBuilder().subject(patientRef).seed(seed).build();
+        const [ai] = createAllergyIntoleranceBuilder().subject(patientRef).seed(seed).fhirVersion(fhirVersion).build();
         if (ai) resources.push(ai);
       } else {
-        const [ms] = createMedicationStatementBuilder().subject(patientRef).seed(seed).build();
+        const [ms] = createMedicationStatementBuilder().subject(patientRef).seed(seed).fhirVersion(fhirVersion).build();
         if (ms) resources.push(ms);
       }
     }
@@ -101,6 +103,7 @@ function buildClinicalResources(
       .subject(patientRef)
       .category(cat)
       .seed(nextSeed(rng))
+      .fhirVersion(fhirVersion)
       .build();
     if (obs) {
       resources.push({ ...obs, performer: [{ reference: practRef }] });
@@ -108,15 +111,15 @@ function buildClinicalResources(
   }
 
   if (rng() < 0.7) {
-    const [cond] = createConditionBuilder().subject(patientRef).seed(nextSeed(rng)).build();
+    const [cond] = createConditionBuilder().subject(patientRef).seed(nextSeed(rng)).fhirVersion(fhirVersion).build();
     if (cond) resources.push(cond);
   }
   if (rng() < 0.5) {
-    const [ai] = createAllergyIntoleranceBuilder().subject(patientRef).seed(nextSeed(rng)).build();
+    const [ai] = createAllergyIntoleranceBuilder().subject(patientRef).seed(nextSeed(rng)).fhirVersion(fhirVersion).build();
     if (ai) resources.push(ai);
   }
   if (rng() < 0.6) {
-    const [ms] = createMedicationStatementBuilder().subject(patientRef).seed(nextSeed(rng)).build();
+    const [ms] = createMedicationStatementBuilder().subject(patientRef).seed(nextSeed(rng)).fhirVersion(fhirVersion).build();
     if (ms) resources.push(ms);
   }
 
@@ -131,6 +134,7 @@ function buildSingleBundle(
   locale: Locale,
   bundleType: BundleType,
   clinicalCount: number | undefined,
+  fhirVersion: FhirVersion,
   overrideMap: Record<string, unknown>,
   rng: RandomFn,
 ): FhirResource {
@@ -142,9 +146,9 @@ function buildSingleBundle(
   const clinicalRng = createRng(nextSeed(rng));
 
   // Build component resources
-  const [patient] = createPatientBuilder().locale(locale).seed(patientSeed).build();
-  const [org] = createOrganizationBuilder().locale(locale).seed(orgSeed).build();
-  const [pract] = createPractitionerBuilder().locale(locale).seed(practSeed).build();
+  const [patient] = createPatientBuilder().locale(locale).seed(patientSeed).fhirVersion(fhirVersion).build();
+  const [org] = createOrganizationBuilder().locale(locale).seed(orgSeed).fhirVersion(fhirVersion).build();
+  const [pract] = createPractitionerBuilder().locale(locale).seed(practSeed).fhirVersion(fhirVersion).build();
 
   if (!patient || !org || !pract) {
     throw new Error("Bundle: failed to generate component resources");
@@ -165,7 +169,7 @@ function buildSingleBundle(
   };
 
   // Generate clinical resources
-  const clinicalResources = buildClinicalResources(clinicalCount, patientRef, practRef, clinicalRng);
+  const clinicalResources = buildClinicalResources(clinicalCount, patientRef, practRef, fhirVersion, clinicalRng);
 
   // Build bundle entries
   const allResources: FhirResource[] = [wiredPatient, org, pract, ...clinicalResources];
@@ -194,6 +198,7 @@ export interface BundleBuilder {
   count(count: number): BundleBuilder;
   seed(seed: number): BundleBuilder;
   type(bundleType: BundleType): BundleBuilder;
+  fhirVersion(version: FhirVersion): BundleBuilder;
   clinicalResourcesPerPatient(count: number): BundleBuilder;
   overrides(overrides: Record<string, unknown>): BundleBuilder;
   build(): FhirResource[];
@@ -204,6 +209,7 @@ interface BundleBuilderState {
   count: number;
   seed: number;
   bundleType: BundleType;
+  fhirVersion: FhirVersion;
   clinicalCount: number | undefined;
   overrideMap: Record<string, unknown>;
 }
@@ -222,6 +228,9 @@ function makeBuilder(state: BundleBuilderState): BundleBuilder {
     type(t: BundleType): BundleBuilder {
       return makeBuilder({ ...state, bundleType: t });
     },
+    fhirVersion(v: FhirVersion): BundleBuilder {
+      return makeBuilder({ ...state, fhirVersion: v });
+    },
     clinicalResourcesPerPatient(n: number): BundleBuilder {
       return makeBuilder({ ...state, clinicalCount: n });
     },
@@ -239,6 +248,7 @@ function makeBuilder(state: BundleBuilderState): BundleBuilder {
             state.locale,
             state.bundleType,
             state.clinicalCount,
+            state.fhirVersion,
             state.overrideMap,
             bundleSeedRng,
           ),
@@ -256,6 +266,7 @@ export function createBundleBuilder(): BundleBuilder {
     count: 1,
     seed: 0,
     bundleType: "transaction",
+    fhirVersion: "R4",
     clinicalCount: undefined,
     overrideMap: {},
   });

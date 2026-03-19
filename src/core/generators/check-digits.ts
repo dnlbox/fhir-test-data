@@ -214,3 +214,103 @@ export function modulus10CheckDigit(sixDigits: string): string {
   }
   return ((10 - (sum % 10)) % 10).toString();
 }
+
+// ---------------------------------------------------------------------------
+// Korean RRN — Resident Registration Number
+// ---------------------------------------------------------------------------
+
+const RRN_WEIGHTS = [2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5] as const;
+
+/**
+ * Compute the Korean RRN check digit for the first 12 digits.
+ * Returns a single digit string "0"–"9".
+ */
+export function rrnCheckDigit(twelveDigits: string): string {
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    const w = RRN_WEIGHTS[i] ?? 0;
+    sum += Number(twelveDigits[i]) * w;
+  }
+  return ((11 - (sum % 11)) % 10).toString();
+}
+
+/** Validate a Korean RRN (13 digits, with or without hyphen). */
+export function rrnValidate(value: string): boolean {
+  const digits = value.replace(/-/g, "");
+  if (!/^\d{13}$/.test(digits)) return false;
+  return rrnCheckDigit(digits.slice(0, 12)) === digits[12];
+}
+
+// ---------------------------------------------------------------------------
+// Singapore NRIC / FIN — National Registration Identity Card
+// ---------------------------------------------------------------------------
+
+const NRIC_WEIGHTS = [2, 7, 6, 5, 4, 3, 2] as const;
+const NRIC_ST_CHECK_LETTERS = "JZIHGFEDCBA";
+const NRIC_FG_CHECK_LETTERS = "XWUTRQPNMLK";
+
+/**
+ * Compute the Singapore NRIC check letter.
+ * prefix: one of "S" | "T" | "F" | "G"
+ * sevenDigits: 7-digit string
+ * Returns a single uppercase letter.
+ */
+export function nricCheckLetter(prefix: string, sevenDigits: string): string {
+  let sum = 0;
+  for (let i = 0; i < 7; i++) {
+    const w = NRIC_WEIGHTS[i] ?? 0;
+    sum += Number(sevenDigits[i]) * w;
+  }
+  if (prefix === "T" || prefix === "G") sum += 4;
+  const checkLetters = prefix === "F" || prefix === "G" ? NRIC_FG_CHECK_LETTERS : NRIC_ST_CHECK_LETTERS;
+  return checkLetters[sum % 11] ?? "A";
+}
+
+/** Validate a Singapore NRIC (format: SXXXXXXC — prefix + 7 digits + check letter). */
+export function nricValidate(value: string): boolean {
+  if (!/^[STFG]\d{7}[A-Z]$/.test(value)) return false;
+  const prefix = value[0] ?? "";
+  const digits = value.slice(1, 8);
+  const checkChar = value[8] ?? "";
+  return nricCheckLetter(prefix, digits) === checkChar;
+}
+
+// ---------------------------------------------------------------------------
+// Brazilian CPF — Cadastro de Pessoas Físicas
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute the two CPF check digits for 9 base digits.
+ * Returns a 2-digit string (D1D2).
+ * CPF format: NNN.NNN.NNN-DD
+ */
+export function cpfCheckDigits(nineDigits: string): string {
+  // First check digit: weights 10..2
+  let sum1 = 0;
+  for (let i = 0; i < 9; i++) {
+    sum1 += Number(nineDigits[i]) * (10 - i);
+  }
+  const rem1 = sum1 % 11;
+  const d1 = rem1 < 2 ? 0 : 11 - rem1;
+
+  // Second check digit: weights 11..2 (includes d1)
+  const tenDigits = nineDigits + d1.toString();
+  let sum2 = 0;
+  for (let i = 0; i < 10; i++) {
+    sum2 += Number(tenDigits[i]) * (11 - i);
+  }
+  const rem2 = sum2 % 11;
+  const d2 = rem2 < 2 ? 0 : 11 - rem2;
+
+  return d1.toString() + d2.toString();
+}
+
+/** Validate a CPF string. Accepts formatted (NNN.NNN.NNN-DD) or raw (11 digits). */
+export function cpfValidate(value: string): boolean {
+  const digits = value.replace(/[.\-]/g, "");
+  if (!/^\d{11}$/.test(digits)) return false;
+  // Reject all-same-digit CPFs (e.g., "00000000000")
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+  const check = cpfCheckDigits(digits.slice(0, 9));
+  return check === digits.slice(9, 11);
+}

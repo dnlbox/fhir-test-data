@@ -135,18 +135,18 @@ case, document it explicitly in a `TODO` comment with the blocking spec number.
 
 The project is considered v1-complete when:
 
-- [ ] `pnpm build` succeeds and produces a working CLI binary
-- [ ] `pnpm test` passes with coverage of all core modules
-- [ ] `fhir-test-data generate patient --locale us --count 5` produces valid FHIR Patient JSON
-- [ ] `fhir-test-data generate patient --locale uk --count 5` produces Patients with valid NHS Numbers
-- [ ] `fhir-test-data generate bundle --locale au --count 3` produces Bundles with internal references
-- [ ] `fhir-test-data generate patient --locale uk --count 5 --seed 42` produces deterministic output
-- [ ] All identifier generators pass validation against known-valid examples
-- [ ] README accurately describes the tool and includes working examples
-- [ ] No TypeScript errors, no lint errors
-- [ ] No Node-specific imports in `src/core/` or `src/locales/`
-- [ ] No real PHI or PII in any generated data
-- [ ] `fhir-test-data generate patient --locale us --fhir-version R5` produces valid R5 Patient JSON
+- [x] `pnpm build` succeeds and produces a working CLI binary
+- [x] `pnpm test` passes with coverage of all core modules
+- [x] `fhir-test-data generate patient --locale us --count 5` produces valid FHIR Patient JSON
+- [x] `fhir-test-data generate patient --locale uk --count 5` produces Patients with valid NHS Numbers
+- [x] `fhir-test-data generate bundle --locale au --count 3` produces Bundles with internal references
+- [x] `fhir-test-data generate patient --locale uk --count 5 --seed 42` produces deterministic output
+- [x] All identifier generators pass validation against known-valid examples
+- [x] README accurately describes the tool and includes working examples
+- [x] No TypeScript errors, no lint errors
+- [x] No Node-specific imports in `src/core/` or `src/locales/`
+- [x] No real PHI or PII in any generated data
+- [x] `fhir-test-data generate patient --locale us --fhir-version R5` produces valid R5 Patient JSON
 
 ---
 
@@ -160,23 +160,45 @@ The project is considered v1-complete when:
 | 01 | `01-core-types.md` | FHIR resource types, builder interfaces, locale types | complete |
 | 02 | `02-identifier-generators.md` | Check digit algorithms: Luhn, Modulus 11, Verhoeff, 11-proef | complete |
 | 03 | `03-address-generators.md` | Country-aware address generation | complete |
-| 04 | `04-name-generators.md` | Culturally appropriate names per locale | open |
-| 05 | `05-patient-builder.md` | Patient resource builder | open |
+| 04 | `04-name-generators.md` | Culturally appropriate names per locale | complete |
+| 05 | `05-patient-builder.md` | Patient resource builder | complete |
 
 ### Phase 2 — More resources
 
 | # | Spec | Key deliverable | Status |
 |---|------|-----------------|--------|
-| 06 | `06-practitioner-builder.md` | Practitioner + PractitionerRole builder | open |
-| 07 | `07-organization-builder.md` | Organization builder | open |
-| 08 | `08-clinical-builders.md` | Observation, Condition, AllergyIntolerance, MedicationStatement | open |
-| 09 | `09-bundle-builder.md` | Bundle builder with internal references | open |
+| 06 | `06-practitioner-builder.md` | Practitioner + PractitionerRole builder | complete |
+| 07 | `07-organization-builder.md` | Organization builder | complete |
+| 08 | `08-clinical-builders.md` | Observation, Condition, AllergyIntolerance, MedicationStatement | complete |
+| 09 | `09-bundle-builder.md` | Bundle builder with internal references | complete |
 
 ### Phase 3 — CLI and publishing
 
 | # | Spec | Key deliverable | Status |
 |---|------|-----------------|--------|
-| 10 | `10-cli.md` | CLI generate command | open |
-| 11 | `11-readme.md` | Root README.md | open |
-| 12 | `12-ci.md` | GitHub Actions: typecheck, lint, test, build | open |
-| 13 | `13-npm-publish.md` | npm publishing setup | open |
+| 10 | `10-cli.md` | CLI generate command | complete |
+| 11 | `11-readme.md` | Root README.md | complete |
+| 12 | `12-ci.md` | GitHub Actions: typecheck, lint, test, build | complete |
+| 13 | `13-npm-publish.md` | npm publishing setup | complete |
+
+### Phase 4 — Fault injection and multi-version
+
+| # | Spec | Key deliverable | Status |
+|---|------|-----------------|--------|
+| 14 | `14-invalid-resources.md` | Fault injection for invalid FHIR resource generation | complete |
+| 15 | `15-fhir-multi-version.md` | FHIR R4 / R4B / R5 multi-version support | complete |
+
+### Phase 5 — Integration correctness and locale expansion
+
+| # | Spec | Key deliverable | Status |
+|---|------|-----------------|--------|
+| 16 | `16-r5-allergy-intolerance-subject.md` | Fix R5 AllergyIntolerance: `patient` → `subject` field rename | complete |
+| 17 | `17-practitioner-role-in-generate-all.md` | Include PractitionerRole in `generate all` output | complete |
+| 18 | `18-multiresource-stdout-ndjson.md` | Multi-resource stdout always emits compact NDJSON (pipe-safe) | complete |
+| 19 | `19-apac-locales.md` | New locales: Japan (`jp`), South Korea (`kr`), Singapore (`sg`) | complete |
+| 20 | `20-south-america-africa-locales.md` | New locales: Brazil (`br`), Mexico (`mx`), South Africa (`za`) | complete |
+| 21 | `21-kr-rrn-gender-digit.md` | Fix Korea RRN gender digit consistency with `Patient.gender` | complete |
+| 22 | `22-fault-clinical-dates.md` | Extend malformed-date fault to clinical resource date fields (effectiveDateTime etc.) | complete |
+| 23 | `23-practitioner-identifiers-new-locales.md` | Practitioner identifiers for jp, kr, sg, br, mx, za, ca, in locales | complete |
+| 24 | `24-clinical-code-pool-expansion.md` | Expand SNOMED/LOINC code pools; add RxNorm for US medication codes | complete |
+| 25 | `25-practitioner-role-reference-integrity.md` | Fix PractitionerRole dangling Practitioner/Organization refs; add to bundle | open |

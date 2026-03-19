@@ -1,9 +1,10 @@
-import type { FhirResource, Locale } from "@/core/types.js";
+import type { FhirResource, FhirVersion, Locale } from "@/core/types.js";
 import { createRng, pickRandom, randomInt } from "@/core/generators/rng.js";
 import { generateUuidV4, deepMerge, generateDateTime } from "./utils.js";
 import { COMMON_LOINC_CODES } from "@/core/data/loinc-codes.js";
 import type { LoincCode } from "@/core/data/loinc-codes.js";
 import type { RandomFn } from "@/core/types.js";
+import { adaptToVersion } from "./version-adapters.js";
 
 // ---------------------------------------------------------------------------
 // Value generation
@@ -86,6 +87,7 @@ export interface ObservationBuilder {
   seed(seed: number): ObservationBuilder;
   subject(patientReference: string): ObservationBuilder;
   category(category: "vital-signs" | "laboratory"): ObservationBuilder;
+  fhirVersion(version: FhirVersion): ObservationBuilder;
   overrides(overrides: Record<string, unknown>): ObservationBuilder;
   build(): FhirResource[];
 }
@@ -94,6 +96,7 @@ interface ObservationBuilderState {
   locale: Locale;
   count: number;
   seed: number;
+  fhirVersion: FhirVersion;
   subjectRef: string | undefined;
   categoryFilter: "vital-signs" | "laboratory" | undefined;
   overrideMap: Record<string, unknown>;
@@ -116,6 +119,9 @@ function makeBuilder(state: ObservationBuilderState): ObservationBuilder {
     category(cat: "vital-signs" | "laboratory"): ObservationBuilder {
       return makeBuilder({ ...state, categoryFilter: cat });
     },
+    fhirVersion(v: FhirVersion): ObservationBuilder {
+      return makeBuilder({ ...state, fhirVersion: v });
+    },
     overrides(o: Record<string, unknown>): ObservationBuilder {
       return makeBuilder({ ...state, overrideMap: o });
     },
@@ -124,7 +130,7 @@ function makeBuilder(state: ObservationBuilderState): ObservationBuilder {
       const results: FhirResource[] = [];
       for (let i = 0; i < state.count; i++) {
         const subjectRef = state.subjectRef ?? `Patient/${generateUuidV4(rng)}`;
-        const obs = buildObservation(state.categoryFilter, subjectRef, rng);
+        const obs = adaptToVersion(buildObservation(state.categoryFilter, subjectRef, rng), state.fhirVersion);
         if (Object.keys(state.overrideMap).length > 0) {
           results.push(deepMerge(obs as Record<string, unknown>, state.overrideMap) as FhirResource);
         } else {
@@ -142,6 +148,7 @@ export function createObservationBuilder(): ObservationBuilder {
     locale: "us",
     count: 1,
     seed: 0,
+    fhirVersion: "R4",
     subjectRef: undefined,
     categoryFilter: undefined,
     overrideMap: {},
