@@ -28,18 +28,35 @@ const SPECIALTY_CODES = [
 // PractitionerRole resource assembly
 // ---------------------------------------------------------------------------
 
-function buildPractitionerRole(locale: Locale, fhirVersion: FhirVersion, rng: RandomFn): FhirResource {
-  // Generate an internal Practitioner to reference
-  const practSeed = Math.floor(rng() * 0x7fffffff);
-  const [practitioner] = createPractitionerBuilder()
-    .locale(locale)
-    .seed(practSeed)
-    .fhirVersion(fhirVersion)
-    .build();
+interface PractitionerRoleOptions {
+  /** ID of an already-built Practitioner in the same session. When omitted a
+   *  synthetic Practitioner is generated internally (standalone usage). */
+  practitionerId?: string;
+  /** ID of an already-built Organization in the same session. When omitted the
+   *  organization reference is left unset. */
+  organizationId?: string;
+}
 
-  if (!practitioner) throw new Error("PractitionerRole: failed to generate Practitioner");
+function buildPractitionerRole(
+  locale: Locale,
+  fhirVersion: FhirVersion,
+  rng: RandomFn,
+  options: PractitionerRoleOptions = {},
+): FhirResource {
+  // Use the injected Practitioner ID when available; otherwise generate one
+  // so the standalone `generate practitioner-role` command still works.
+  let practitionerId = options.practitionerId;
+  if (practitionerId === undefined) {
+    const practSeed = Math.floor(rng() * 0x7fffffff);
+    const [practitioner] = createPractitionerBuilder()
+      .locale(locale)
+      .seed(practSeed)
+      .fhirVersion(fhirVersion)
+      .build();
+    if (!practitioner) throw new Error("PractitionerRole: failed to generate Practitioner");
+    practitionerId = practitioner["id"] as string;
+  }
 
-  const practitionerId = practitioner["id"] as string;
   const role = pickRandom(ROLE_CODES, rng);
   const specialty = pickRandom(SPECIALTY_CODES, rng);
 
@@ -48,6 +65,9 @@ function buildPractitionerRole(locale: Locale, fhirVersion: FhirVersion, rng: Ra
     id: generateUuidV4(rng),
     active: true,
     practitioner: { reference: `Practitioner/${practitionerId}` },
+    ...(options.organizationId !== undefined && {
+      organization: { reference: `Organization/${options.organizationId}` },
+    }),
     code: [
       {
         coding: [{ system: role.system, code: role.code, display: role.display }],
@@ -72,6 +92,10 @@ export interface PractitionerRoleBuilder {
   count(count: number): PractitionerRoleBuilder;
   seed(seed: number): PractitionerRoleBuilder;
   fhirVersion(version: FhirVersion): PractitionerRoleBuilder;
+  /** Inject the ID of an already-built Practitioner so the reference is consistent. */
+  practitionerId(id: string): PractitionerRoleBuilder;
+  /** Inject the ID of an already-built Organization so the reference is consistent. */
+  organizationId(id: string): PractitionerRoleBuilder;
   overrides(overrides: Record<string, unknown>): PractitionerRoleBuilder;
   build(): FhirResource[];
 }
@@ -81,6 +105,8 @@ interface PractitionerRoleBuilderState {
   count: number;
   seed: number;
   fhirVersion: FhirVersion;
+  injectedPractitionerId: string | undefined;
+  injectedOrganizationId: string | undefined;
   overrideMap: Record<string, unknown>;
 }
 
@@ -90,14 +116,24 @@ function makeBuilder(state: PractitionerRoleBuilderState): PractitionerRoleBuild
     count(n: number): PractitionerRoleBuilder { return makeBuilder({ ...state, count: n }); },
     seed(s: number): PractitionerRoleBuilder { return makeBuilder({ ...state, seed: s }); },
     fhirVersion(v: FhirVersion): PractitionerRoleBuilder { return makeBuilder({ ...state, fhirVersion: v }); },
+    practitionerId(id: string): PractitionerRoleBuilder {
+      return makeBuilder({ ...state, injectedPractitionerId: id });
+    },
+    organizationId(id: string): PractitionerRoleBuilder {
+      return makeBuilder({ ...state, injectedOrganizationId: id });
+    },
     overrides(o: Record<string, unknown>): PractitionerRoleBuilder {
       return makeBuilder({ ...state, overrideMap: o });
     },
     build(): FhirResource[] {
       const rng = createRng(state.seed);
       const hasOverrides = Object.keys(state.overrideMap).length > 0;
+      const options: PractitionerRoleOptions = {
+        ...(state.injectedPractitionerId !== undefined && { practitionerId: state.injectedPractitionerId }),
+        ...(state.injectedOrganizationId !== undefined && { organizationId: state.injectedOrganizationId }),
+      };
       return Array.from({ length: state.count }, () => {
-        const role = buildPractitionerRole(state.locale, state.fhirVersion, rng);
+        const role = buildPractitionerRole(state.locale, state.fhirVersion, rng, options);
         return hasOverrides
           ? deepMerge(role as Record<string, unknown>, state.overrideMap) as FhirResource
           : role;
@@ -108,5 +144,13 @@ function makeBuilder(state: PractitionerRoleBuilderState): PractitionerRoleBuild
 
 /** Create a new PractitionerRoleBuilder with default options. */
 export function createPractitionerRoleBuilder(): PractitionerRoleBuilder {
-  return makeBuilder({ locale: "us", count: 1, seed: 0, fhirVersion: "R4", overrideMap: {} });
+  return makeBuilder({
+    locale: "us",
+    count: 1,
+    seed: 0,
+    fhirVersion: "R4",
+    injectedPractitionerId: undefined,
+    injectedOrganizationId: undefined,
+    overrideMap: {},
+  });
 }

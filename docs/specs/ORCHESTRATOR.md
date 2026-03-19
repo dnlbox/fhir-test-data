@@ -201,4 +201,4 @@ The project is considered v1-complete when:
 | 22 | `22-fault-clinical-dates.md` | Extend malformed-date fault to clinical resource date fields (effectiveDateTime etc.) | complete |
 | 23 | `23-practitioner-identifiers-new-locales.md` | Practitioner identifiers for jp, kr, sg, br, mx, za, ca, in locales | complete |
 | 24 | `24-clinical-code-pool-expansion.md` | Expand SNOMED/LOINC code pools; add RxNorm for US medication codes | complete |
-| 25 | `25-practitioner-role-reference-integrity.md` | Fix PractitionerRole dangling Practitioner/Organization refs; add to bundle | open |
+| 25 | `25-practitioner-role-reference-integrity.md` | Fix PractitionerRole dangling Practitioner/Organization refs; add to bundle | complete |

@@ -1,5 +1,5 @@
 ---
-**Status:** open
+**Status:** complete
 ---
 
 # Spec 25 — PractitionerRole reference integrity and bundle inclusion

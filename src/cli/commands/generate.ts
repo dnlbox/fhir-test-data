@@ -181,8 +181,35 @@ function runGenerate(resourceType: string, opts: GenerateOptions): void {
   const typesToGenerate: ConcreteResourceType[] =
     resourceType === "all" ? CONCRETE_RESOURCE_TYPES : [resourceType as ConcreteResourceType];
 
+  // Pre-build Practitioner and Organization when running "generate all" so that
+  // PractitionerRole references the exact same IDs already in the output.
+  let coordinatedPractId: string | undefined;
+  let coordinatedOrgId: string | undefined;
+  if (resourceType === "all") {
+    const [firstPract] = BUILDER_FACTORIES["practitioner"](locale, count, seed, fhirVersion);
+    const [firstOrg] = BUILDER_FACTORIES["organization"](locale, count, seed, fhirVersion);
+    coordinatedPractId = firstPract?.["id"] as string | undefined;
+    coordinatedOrgId = firstOrg?.["id"] as string | undefined;
+  }
+
   for (const type of typesToGenerate) {
-    let resources = BUILDER_FACTORIES[type](locale, count, seed, fhirVersion);
+    let resources: FhirResource[];
+    if (
+      type === "practitioner-role" &&
+      coordinatedPractId !== undefined &&
+      coordinatedOrgId !== undefined
+    ) {
+      resources = createPractitionerRoleBuilder()
+        .locale(locale)
+        .count(count)
+        .seed(seed)
+        .fhirVersion(fhirVersion)
+        .practitionerId(coordinatedPractId)
+        .organizationId(coordinatedOrgId)
+        .build();
+    } else {
+      resources = BUILDER_FACTORIES[type](locale, count, seed, fhirVersion);
+    }
 
     if (faults.length > 0) {
       // Use a separate RNG for fault injection so it doesn't affect generation

@@ -8,6 +8,7 @@ import { createObservationBuilder } from "./observation.js";
 import { createConditionBuilder } from "./condition.js";
 import { createAllergyIntoleranceBuilder } from "./allergy-intolerance.js";
 import { createMedicationStatementBuilder } from "./medication-statement.js";
+import { createPractitionerRoleBuilder } from "./practitioner-role.js";
 import type { RandomFn } from "@/core/types.js";
 
 // ---------------------------------------------------------------------------
@@ -143,6 +144,7 @@ function buildSingleBundle(
   const patientSeed = nextSeed(rng);
   const orgSeed = nextSeed(rng);
   const practSeed = nextSeed(rng);
+  const practRoleSeed = nextSeed(rng);
   const clinicalRng = createRng(nextSeed(rng));
 
   // Build component resources
@@ -162,6 +164,15 @@ function buildSingleBundle(
   const orgRef = `urn:uuid:${orgId}`;
   const practRef = `urn:uuid:${practId}`;
 
+  // Build PractitionerRole with the same Practitioner and Organization IDs
+  const [practRole] = createPractitionerRoleBuilder()
+    .locale(locale)
+    .seed(practRoleSeed)
+    .fhirVersion(fhirVersion)
+    .practitionerId(practId)
+    .organizationId(orgId)
+    .build();
+
   // Wire patient → organization
   const wiredPatient: FhirResource = {
     ...patient,
@@ -171,8 +182,11 @@ function buildSingleBundle(
   // Generate clinical resources
   const clinicalResources = buildClinicalResources(clinicalCount, patientRef, practRef, fhirVersion, clinicalRng);
 
-  // Build bundle entries
-  const allResources: FhirResource[] = [wiredPatient, org, pract, ...clinicalResources];
+  // Build bundle entries (PractitionerRole immediately after Practitioner)
+  const coreResources: FhirResource[] = practRole
+    ? [wiredPatient, org, pract, practRole]
+    : [wiredPatient, org, pract];
+  const allResources: FhirResource[] = [...coreResources, ...clinicalResources];
   const entries = allResources.map((r) => makeEntry(r, bundleType));
 
   const bundleIdRng = createRng(bundleIdSeed);
