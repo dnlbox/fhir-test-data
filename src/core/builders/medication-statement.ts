@@ -1,15 +1,19 @@
-import type { FhirResource, Locale } from "@/core/types.js";
+import type { FhirResource, FhirVersion, Locale } from "@/core/types.js";
 import { createRng, pickRandom } from "@/core/generators/rng.js";
 import { generateUuidV4, deepMerge, generateDate } from "./utils.js";
-import { COMMON_MEDICATION_CODES } from "@/core/data/medication-codes.js";
+import { COMMON_MEDICATION_CODES, US_RXNORM_MEDICATION_CODES } from "@/core/data/medication-codes.js";
 import type { RandomFn } from "@/core/types.js";
+import { adaptToVersion } from "./version-adapters.js";
 
 // ---------------------------------------------------------------------------
 // MedicationStatement resource assembly
 // ---------------------------------------------------------------------------
 
-function buildMedicationStatement(subject: string, rng: RandomFn): FhirResource {
-  const med = pickRandom(COMMON_MEDICATION_CODES, rng);
+function buildMedicationStatement(subject: string, locale: Locale, rng: RandomFn): FhirResource {
+  const pool = locale === "us"
+    ? [...COMMON_MEDICATION_CODES, ...US_RXNORM_MEDICATION_CODES]
+    : COMMON_MEDICATION_CODES;
+  const med = pickRandom(pool, rng);
   const startDate = generateDate(2018, 2024, rng);
 
   return {
@@ -46,6 +50,7 @@ export interface MedicationStatementBuilder {
   count(count: number): MedicationStatementBuilder;
   seed(seed: number): MedicationStatementBuilder;
   subject(patientReference: string): MedicationStatementBuilder;
+  fhirVersion(version: FhirVersion): MedicationStatementBuilder;
   overrides(overrides: Record<string, unknown>): MedicationStatementBuilder;
   build(): FhirResource[];
 }
@@ -54,6 +59,7 @@ interface MedicationStatementBuilderState {
   locale: Locale;
   count: number;
   seed: number;
+  fhirVersion: FhirVersion;
   subjectRef: string | undefined;
   overrideMap: Record<string, unknown>;
 }
@@ -72,6 +78,9 @@ function makeBuilder(state: MedicationStatementBuilderState): MedicationStatemen
     subject(ref: string): MedicationStatementBuilder {
       return makeBuilder({ ...state, subjectRef: ref });
     },
+    fhirVersion(v: FhirVersion): MedicationStatementBuilder {
+      return makeBuilder({ ...state, fhirVersion: v });
+    },
     overrides(o: Record<string, unknown>): MedicationStatementBuilder {
       return makeBuilder({ ...state, overrideMap: o });
     },
@@ -80,7 +89,10 @@ function makeBuilder(state: MedicationStatementBuilderState): MedicationStatemen
       const results: FhirResource[] = [];
       for (let i = 0; i < state.count; i++) {
         const subjectRef = state.subjectRef ?? `Patient/${generateUuidV4(rng)}`;
-        const medStatement = buildMedicationStatement(subjectRef, rng);
+        const medStatement = adaptToVersion(
+          buildMedicationStatement(subjectRef, state.locale, rng),
+          state.fhirVersion,
+        );
         if (Object.keys(state.overrideMap).length > 0) {
           results.push(
             deepMerge(
@@ -103,6 +115,7 @@ export function createMedicationStatementBuilder(): MedicationStatementBuilder {
     locale: "us",
     count: 1,
     seed: 0,
+    fhirVersion: "R4",
     subjectRef: undefined,
     overrideMap: {},
   });

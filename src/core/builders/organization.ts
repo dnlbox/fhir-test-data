@@ -1,8 +1,9 @@
-import type { FhirResource, Locale, RandomFn } from "@/core/types.js";
+import type { FhirResource, FhirVersion, Locale, RandomFn } from "@/core/types.js";
 import { createRng, pickRandom, randomInt } from "@/core/generators/rng.js";
 import { generateAddress } from "@/core/generators/addresses.js";
 import { generateUuidV4, deepMerge } from "./utils.js";
 import { getLocale } from "@/locales/index.js";
+import { adaptToVersion } from "./version-adapters.js";
 
 // ---------------------------------------------------------------------------
 // Organization name generation
@@ -40,6 +41,12 @@ const WORK_PHONE_FORMATTERS: Record<Locale, PhoneFormatter> = {
   fr:  (rng) => `0${randomInt(1, 9, rng)} ${randomInt(10, 99, rng)} ${randomInt(10, 99, rng)} ${randomInt(10, 99, rng)} ${randomInt(10, 99, rng)}`,
   nl:  (rng) => `0${randomInt(10, 99, rng)} ${randomInt(1000000, 9999999, rng)}`,
   in:  (rng) => `0${randomInt(11, 99, rng)}-${randomInt(10000000, 99999999, rng)}`,
+  jp:  (rng) => `0${randomInt(3, 9, rng)}-${randomInt(1000, 9999, rng)}-${randomInt(1000, 9999, rng)}`,
+  kr:  (rng) => `0${randomInt(10, 99, rng)}-${randomInt(1000, 9999, rng)}-${randomInt(1000, 9999, rng)}`,
+  sg:  (rng) => `${randomInt(6000, 9999, rng)} ${randomInt(1000, 9999, rng)}`,
+  br:  (rng) => `(${randomInt(11, 99, rng)}) ${randomInt(2000, 9999, rng)}-${randomInt(1000, 9999, rng)}`,
+  mx:  (rng) => `55 ${randomInt(1000, 9999, rng)} ${randomInt(1000, 9999, rng)}`,
+  za:  (rng) => `0${randomInt(10, 99, rng)} ${randomInt(100, 999, rng)} ${randomInt(1000, 9999, rng)}`,
 };
 
 // ---------------------------------------------------------------------------
@@ -96,6 +103,7 @@ export interface OrganizationBuilder {
   locale(locale: Locale): OrganizationBuilder;
   count(count: number): OrganizationBuilder;
   seed(seed: number): OrganizationBuilder;
+  fhirVersion(version: FhirVersion): OrganizationBuilder;
   overrides(overrides: Record<string, unknown>): OrganizationBuilder;
   build(): FhirResource[];
 }
@@ -104,6 +112,7 @@ interface OrganizationBuilderState {
   locale: Locale;
   count: number;
   seed: number;
+  fhirVersion: FhirVersion;
   overrideMap: Record<string, unknown>;
 }
 
@@ -112,6 +121,7 @@ function makeBuilder(state: OrganizationBuilderState): OrganizationBuilder {
     locale(loc: Locale):  OrganizationBuilder { return makeBuilder({ ...state, locale: loc }); },
     count(n: number):     OrganizationBuilder { return makeBuilder({ ...state, count: n }); },
     seed(s: number):      OrganizationBuilder { return makeBuilder({ ...state, seed: s }); },
+    fhirVersion(v: FhirVersion): OrganizationBuilder { return makeBuilder({ ...state, fhirVersion: v }); },
     overrides(o: Record<string, unknown>): OrganizationBuilder {
       return makeBuilder({ ...state, overrideMap: o });
     },
@@ -119,7 +129,7 @@ function makeBuilder(state: OrganizationBuilderState): OrganizationBuilder {
       const rng = createRng(state.seed);
       const hasOverrides = Object.keys(state.overrideMap).length > 0;
       return Array.from({ length: state.count }, () => {
-        const org = buildOrganization(state.locale, rng);
+        const org = adaptToVersion(buildOrganization(state.locale, rng), state.fhirVersion);
         return hasOverrides
           ? deepMerge(org as Record<string, unknown>, state.overrideMap) as FhirResource
           : org;
@@ -130,5 +140,5 @@ function makeBuilder(state: OrganizationBuilderState): OrganizationBuilder {
 
 /** Create a new OrganizationBuilder with default options. */
 export function createOrganizationBuilder(): OrganizationBuilder {
-  return makeBuilder({ locale: "us", count: 1, seed: 0, overrideMap: {} });
+  return makeBuilder({ locale: "us", count: 1, seed: 0, fhirVersion: "R4", overrideMap: {} });
 }

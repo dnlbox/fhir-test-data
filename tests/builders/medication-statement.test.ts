@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { createMedicationStatementBuilder } from "@/core/builders/medication-statement.js";
-import { COMMON_MEDICATION_CODES } from "@/core/data/medication-codes.js";
+import { COMMON_MEDICATION_CODES, US_RXNORM_MEDICATION_CODES } from "@/core/data/medication-codes.js";
 
 const MED_CODES = COMMON_MEDICATION_CODES.map((c) => c.code);
+const ALL_US_MED_CODES = [...COMMON_MEDICATION_CODES, ...US_RXNORM_MEDICATION_CODES].map((c) => c.code);
 
 describe("MedicationStatement structure", () => {
   it("has required top-level fields", () => {
@@ -31,13 +32,22 @@ describe("MedicationStatement structure", () => {
     expect(subject?.["reference"]).toBe("Patient/pt-999");
   });
 
-  it("medication code is from known list", () => {
-    const statements = createMedicationStatementBuilder().seed(5).count(30).build();
+  it("medication code is from known list (non-US locale uses SNOMED only)", () => {
+    const statements = createMedicationStatementBuilder().locale("de").seed(5).count(30).build();
     for (const ms of statements) {
       const medCode = ms["medicationCodeableConcept"] as Record<string, unknown>;
       const coding = (medCode["coding"] as Array<Record<string, unknown>>)[0];
       expect(MED_CODES).toContain(coding?.["code"]);
       expect(coding?.["system"]).toBe("http://snomed.info/sct");
+    }
+  });
+
+  it("medication code is from known list (US locale may include RxNorm)", () => {
+    const statements = createMedicationStatementBuilder().locale("us").seed(5).count(30).build();
+    for (const ms of statements) {
+      const medCode = ms["medicationCodeableConcept"] as Record<string, unknown>;
+      const coding = (medCode["coding"] as Array<Record<string, unknown>>)[0];
+      expect(ALL_US_MED_CODES).toContain(coding?.["code"]);
     }
   });
 
@@ -69,5 +79,41 @@ describe("MedicationStatement determinism", () => {
     const a = createMedicationStatementBuilder().seed(1).count(5).build();
     const b = createMedicationStatementBuilder().seed(2).count(5).build();
     expect(a).not.toEqual(b);
+  });
+});
+
+describe("MedicationStatement — R5 (MedicationUsage)", () => {
+  it("resourceType is MedicationUsage for R5", () => {
+    const [ms] = createMedicationStatementBuilder().seed(1).fhirVersion("R5").build();
+    expect(ms?.["resourceType"]).toBe("MedicationUsage");
+  });
+
+  it("medication.concept contains coding for R5", () => {
+    const [ms] = createMedicationStatementBuilder().seed(1).fhirVersion("R5").build();
+    const medication = ms?.["medication"] as Record<string, unknown>;
+    const concept = medication?.["concept"] as Record<string, unknown>;
+    expect(Array.isArray(concept?.["coding"])).toBe(true);
+  });
+
+  it("medicationCodeableConcept is absent for R5", () => {
+    const [ms] = createMedicationStatementBuilder().seed(1).fhirVersion("R5").build();
+    expect(ms?.["medicationCodeableConcept"]).toBeUndefined();
+  });
+
+  it("status is recorded for R5", () => {
+    const [ms] = createMedicationStatementBuilder().seed(1).fhirVersion("R5").build();
+    expect(ms?.["status"]).toBe("recorded");
+  });
+
+  it("R4 output is unchanged by default", () => {
+    const [ms] = createMedicationStatementBuilder().seed(1).build();
+    expect(ms?.["resourceType"]).toBe("MedicationStatement");
+    expect(ms?.["medicationCodeableConcept"]).toBeDefined();
+  });
+
+  it("R4B output is same structure as R4", () => {
+    const [r4] = createMedicationStatementBuilder().seed(1).fhirVersion("R4").build();
+    const [r4b] = createMedicationStatementBuilder().seed(1).fhirVersion("R4B").build();
+    expect(r4).toEqual(r4b);
   });
 });

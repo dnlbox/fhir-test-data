@@ -8,9 +8,10 @@ import { createObservationBuilder } from "@/core/builders/observation.js";
 import { createConditionBuilder } from "@/core/builders/condition.js";
 import { createAllergyIntoleranceBuilder } from "@/core/builders/allergy-intolerance.js";
 import { createMedicationStatementBuilder } from "@/core/builders/medication-statement.js";
+import { createPractitionerRoleBuilder } from "@/core/builders/practitioner-role.js";
 import { createBundleBuilder } from "@/core/builders/bundle.js";
-import { SUPPORTED_LOCALES } from "@/core/types.js";
-import type { Locale, FhirResource } from "@/core/types.js";
+import { SUPPORTED_LOCALES, SUPPORTED_FHIR_VERSIONS } from "@/core/types.js";
+import type { FhirVersion, Locale, FhirResource } from "@/core/types.js";
 import { injectFaults, FAULT_TYPES } from "@/core/faults/index.js";
 import type { FaultType } from "@/core/faults/index.js";
 import { createRng } from "@/core/generators/rng.js";
@@ -22,6 +23,7 @@ import { createRng } from "@/core/generators/rng.js";
 type ResourceType =
   | "patient"
   | "practitioner"
+  | "practitioner-role"
   | "organization"
   | "observation"
   | "condition"
@@ -34,16 +36,17 @@ type ConcreteResourceType = Exclude<ResourceType, "all">;
 
 const BUILDER_FACTORIES: Record<
   ConcreteResourceType,
-  (locale: Locale, count: number, seed: number) => FhirResource[]
+  (locale: Locale, count: number, seed: number, fhirVersion: FhirVersion) => FhirResource[]
 > = {
-  patient:              (l, c, s) => createPatientBuilder().locale(l).count(c).seed(s).build(),
-  practitioner:         (l, c, s) => createPractitionerBuilder().locale(l).count(c).seed(s).build(),
-  organization:         (l, c, s) => createOrganizationBuilder().locale(l).count(c).seed(s).build(),
-  observation:          (l, c, s) => createObservationBuilder().locale(l).count(c).seed(s).build(),
-  condition:            (l, c, s) => createConditionBuilder().locale(l).count(c).seed(s).build(),
-  "allergy-intolerance":(l, c, s) => createAllergyIntoleranceBuilder().locale(l).count(c).seed(s).build(),
-  "medication-statement":(l, c, s) => createMedicationStatementBuilder().locale(l).count(c).seed(s).build(),
-  bundle:               (l, c, s) => createBundleBuilder().locale(l).count(c).seed(s).build(),
+  patient:               (l, c, s, v) => createPatientBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  practitioner:          (l, c, s, v) => createPractitionerBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  "practitioner-role":   (l, c, s, v) => createPractitionerRoleBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  organization:          (l, c, s, v) => createOrganizationBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  observation:           (l, c, s, v) => createObservationBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  condition:             (l, c, s, v) => createConditionBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  "allergy-intolerance": (l, c, s, v) => createAllergyIntoleranceBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  "medication-statement":(l, c, s, v) => createMedicationStatementBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  bundle:                (l, c, s, v) => createBundleBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
 };
 
 const CONCRETE_RESOURCE_TYPES = Object.keys(BUILDER_FACTORIES) as ConcreteResourceType[];
@@ -57,6 +60,7 @@ interface GenerateOptions {
   locale: string;
   count: string;
   seed?: string;
+  fhirVersion: string;
   output?: string;
   format: string;
   pretty: boolean;
@@ -113,8 +117,9 @@ function writeToOutput(
   );
 }
 
-function writeToStdout(resources: FhirResource[], format: string, pretty: boolean): void {
-  if (format === "ndjson") {
+function writeToStdout(resources: FhirResource[], format: string, pretty: boolean, forceCompact = false): void {
+  if (format === "ndjson" || forceCompact) {
+    // NDJSON output: always compact (pipe-safe). --pretty is a no-op for NDJSON stdout.
     for (const r of resources) {
       process.stdout.write(JSON.stringify(r) + "\n");
     }
@@ -146,6 +151,13 @@ function runGenerate(resourceType: string, opts: GenerateOptions): void {
     process.exit(1);
   }
 
+  if (!SUPPORTED_FHIR_VERSIONS.includes(opts.fhirVersion as FhirVersion)) {
+    process.stderr.write(
+      `Error: unknown FHIR version "${opts.fhirVersion}". Supported versions: ${SUPPORTED_FHIR_VERSIONS.join(", ")}\n`,
+    );
+    process.exit(1);
+  }
+
   // Parse faults before doing any work.
   let faults: FaultType[] = [];
   if (opts.faults !== undefined) {
@@ -158,6 +170,7 @@ function runGenerate(resourceType: string, opts: GenerateOptions): void {
   }
 
   const locale = opts.locale as Locale;
+  const fhirVersion = opts.fhirVersion as FhirVersion;
   const count = Number.parseInt(opts.count, 10);
   const seed =
     opts.seed !== undefined
@@ -169,7 +182,7 @@ function runGenerate(resourceType: string, opts: GenerateOptions): void {
     resourceType === "all" ? CONCRETE_RESOURCE_TYPES : [resourceType as ConcreteResourceType];
 
   for (const type of typesToGenerate) {
-    let resources = BUILDER_FACTORIES[type](locale, count, seed);
+    let resources = BUILDER_FACTORIES[type](locale, count, seed, fhirVersion);
 
     if (faults.length > 0) {
       // Use a separate RNG for fault injection so it doesn't affect generation
@@ -187,7 +200,7 @@ function runGenerate(resourceType: string, opts: GenerateOptions): void {
         process.exit(2);
       }
     } else {
-      writeToStdout(resources, format, opts.pretty);
+      writeToStdout(resources, format, opts.pretty, typesToGenerate.length > 1);
     }
   }
 }
@@ -199,6 +212,11 @@ export function registerGenerateCommand(program: Command): void {
     .option("--locale <code>", "locale for identifiers and addresses", "us")
     .option("--count <n>", "number of resources to generate", "1")
     .option("--seed <n>", "seed for deterministic output")
+    .option(
+      "--fhir-version <version>",
+      `FHIR version to target: ${SUPPORTED_FHIR_VERSIONS.join(" | ")}`,
+      "R4",
+    )
     .option("--output <dir>", "output directory (one file per resource)")
     .option("--format <fmt>", "output format: json | ndjson", "json")
     .option("--pretty", "pretty-print JSON (default for stdout)", true)

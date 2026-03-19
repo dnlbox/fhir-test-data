@@ -1,8 +1,9 @@
-import type { FhirResource, Locale } from "@/core/types.js";
+import type { FhirResource, FhirVersion, Locale } from "@/core/types.js";
 import { createRng, pickRandom } from "@/core/generators/rng.js";
 import { generateUuidV4, deepMerge, generateDate } from "./utils.js";
 import { COMMON_ALLERGY_CODES } from "@/core/data/allergy-codes.js";
 import type { RandomFn } from "@/core/types.js";
+import { adaptToVersion } from "./version-adapters.js";
 
 // ---------------------------------------------------------------------------
 // AllergyIntolerance resource assembly
@@ -61,6 +62,7 @@ export interface AllergyIntoleranceBuilder {
   count(count: number): AllergyIntoleranceBuilder;
   seed(seed: number): AllergyIntoleranceBuilder;
   subject(patientReference: string): AllergyIntoleranceBuilder;
+  fhirVersion(version: FhirVersion): AllergyIntoleranceBuilder;
   overrides(overrides: Record<string, unknown>): AllergyIntoleranceBuilder;
   build(): FhirResource[];
 }
@@ -69,6 +71,7 @@ interface AllergyIntoleranceBuilderState {
   locale: Locale;
   count: number;
   seed: number;
+  fhirVersion: FhirVersion;
   patientRef: string | undefined;
   overrideMap: Record<string, unknown>;
 }
@@ -87,6 +90,9 @@ function makeBuilder(state: AllergyIntoleranceBuilderState): AllergyIntoleranceB
     subject(ref: string): AllergyIntoleranceBuilder {
       return makeBuilder({ ...state, patientRef: ref });
     },
+    fhirVersion(v: FhirVersion): AllergyIntoleranceBuilder {
+      return makeBuilder({ ...state, fhirVersion: v });
+    },
     overrides(o: Record<string, unknown>): AllergyIntoleranceBuilder {
       return makeBuilder({ ...state, overrideMap: o });
     },
@@ -95,7 +101,7 @@ function makeBuilder(state: AllergyIntoleranceBuilderState): AllergyIntoleranceB
       const results: FhirResource[] = [];
       for (let i = 0; i < state.count; i++) {
         const patientRef = state.patientRef ?? `Patient/${generateUuidV4(rng)}`;
-        const allergy = buildAllergyIntolerance(patientRef, rng);
+        const allergy = adaptToVersion(buildAllergyIntolerance(patientRef, rng), state.fhirVersion);
         if (Object.keys(state.overrideMap).length > 0) {
           results.push(
             deepMerge(allergy as Record<string, unknown>, state.overrideMap) as FhirResource,
@@ -115,6 +121,7 @@ export function createAllergyIntoleranceBuilder(): AllergyIntoleranceBuilder {
     locale: "us",
     count: 1,
     seed: 0,
+    fhirVersion: "R4",
     patientRef: undefined,
     overrideMap: {},
   });
