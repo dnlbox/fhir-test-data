@@ -3,10 +3,10 @@ import {
   medicareNumberDefinition,
   hpiiDefinition,
   hpioDefinition,
-} from "../../core/generators/identifiers.js";
+} from "@/core/generators/identifiers.js";
 import { auAddressTemplate } from "./addresses.js";
 import { auNamePool } from "./names.js";
-import type { LocaleDefinition } from "../../core/types.js";
+import type { LocaleDefinition } from "@/core/types.js";
 
 export const auLocale: LocaleDefinition = {
   code: "au",

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { createConditionBuilder } from "../../src/core/builders/condition.js";
-import { COMMON_SNOMED_CONDITIONS } from "../../src/core/data/snomed-codes.js";
+import { createConditionBuilder } from "@/core/builders/condition.js";
+import { COMMON_SNOMED_CONDITIONS } from "@/core/data/snomed-codes.js";
 
 const SNOMED_CODES = COMMON_SNOMED_CONDITIONS.map((c) => c.code);
 

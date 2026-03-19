@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { createPatientBuilder } from "../../src/core/builders/patient.js";
+import { createPatientBuilder } from "@/core/builders/patient.js";
 import {
   nhsNumberDefinition,
   ihiDefinition,
   bsnDefinition,
   ssnDefinition,
-} from "../../src/core/generators/identifiers.js";
-import { getLocale, getAllLocales } from "../../src/locales/index.js";
-import type { FhirResource } from "../../src/core/types.js";
-import { SUPPORTED_LOCALES } from "../../src/core/types.js";
+} from "@/core/generators/identifiers.js";
+import { getLocale, getAllLocales } from "@/locales/index.js";
+import type { FhirResource } from "@/core/types.js";
+import { SUPPORTED_LOCALES } from "@/core/types.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

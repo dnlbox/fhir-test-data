@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { createAllergyIntoleranceBuilder } from "../../src/core/builders/allergy-intolerance.js";
-import { COMMON_ALLERGY_CODES } from "../../src/core/data/allergy-codes.js";
+import { createAllergyIntoleranceBuilder } from "@/core/builders/allergy-intolerance.js";
+import { COMMON_ALLERGY_CODES } from "@/core/data/allergy-codes.js";
 
 const ALLERGY_CODES = COMMON_ALLERGY_CODES.map((c) => c.code);
 

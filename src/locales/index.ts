@@ -6,7 +6,7 @@ import { deLocale } from "./de/index.js";
 import { frLocale } from "./fr/index.js";
 import { nlLocale } from "./nl/index.js";
 import { inLocale } from "./in/index.js";
-import type { Locale, LocaleDefinition } from "../core/types.js";
+import type { Locale, LocaleDefinition } from "@/core/types.js";
 
 const LOCALE_MAP: Record<Locale, LocaleDefinition> = {
   us: usLocale,

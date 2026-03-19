@@ -1,5 +1,5 @@
-import type { AddressTemplate, CityDefinition, RandomFn } from "../../core/types.js";
-import { pickRandom, randomInt } from "../../core/generators/rng.js";
+import type { AddressTemplate, CityDefinition, RandomFn } from "@/core/types.js";
+import { pickRandom, randomInt } from "@/core/generators/rng.js";
 
 // Letters D, F, I, O, Q, U are never used in Canadian postal codes
 // W and Z are never used as the first letter

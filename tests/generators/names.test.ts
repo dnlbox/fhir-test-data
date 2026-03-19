@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { createRng } from "../../src/core/generators/rng.js";
-import { generateName } from "../../src/core/generators/names.js";
-import { usNamePool } from "../../src/locales/us/names.js";
-import { ukNamePool } from "../../src/locales/uk/names.js";
-import { auNamePool } from "../../src/locales/au/names.js";
-import { caNamePool } from "../../src/locales/ca/names.js";
-import { deNamePool } from "../../src/locales/de/names.js";
-import { frNamePool } from "../../src/locales/fr/names.js";
-import { nlNamePool } from "../../src/locales/nl/names.js";
-import { inNamePool } from "../../src/locales/in/names.js";
-import type { NamePool } from "../../src/core/types.js";
+import { createRng } from "@/core/generators/rng.js";
+import { generateName } from "@/core/generators/names.js";
+import { usNamePool } from "@/locales/us/names.js";
+import { ukNamePool } from "@/locales/uk/names.js";
+import { auNamePool } from "@/locales/au/names.js";
+import { caNamePool } from "@/locales/ca/names.js";
+import { deNamePool } from "@/locales/de/names.js";
+import { frNamePool } from "@/locales/fr/names.js";
+import { nlNamePool } from "@/locales/nl/names.js";
+import { inNamePool } from "@/locales/in/names.js";
+import type { NamePool } from "@/core/types.js";
 
 const ALL_POOLS: Array<{ name: string; pool: NamePool }> = [
   { name: "US", pool: usNamePool },

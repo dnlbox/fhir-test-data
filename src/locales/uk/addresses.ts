@@ -1,5 +1,5 @@
-import type { AddressTemplate, RandomFn } from "../../core/types.js";
-import { pickRandom, randomInt } from "../../core/generators/rng.js";
+import type { AddressTemplate, RandomFn } from "@/core/types.js";
+import { pickRandom, randomInt } from "@/core/generators/rng.js";
 
 // Valid postcode area letters (not all 26 are used as area prefixes)
 const POSTCODE_AREA_LETTERS = [..."ABCDEFGHIJKLMNOPRSTUVWXY"];

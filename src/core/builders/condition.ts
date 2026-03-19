@@ -1,8 +1,8 @@
-import type { FhirResource, Locale } from "../types.js";
-import { createRng, pickRandom } from "../generators/rng.js";
+import type { FhirResource, Locale } from "@/core/types.js";
+import { createRng, pickRandom } from "@/core/generators/rng.js";
 import { generateUuidV4, deepMerge, generateDate } from "./utils.js";
-import { COMMON_SNOMED_CONDITIONS } from "../data/snomed-codes.js";
-import type { RandomFn } from "../types.js";
+import { COMMON_SNOMED_CONDITIONS } from "@/core/data/snomed-codes.js";
+import type { RandomFn } from "@/core/types.js";
 
 // ---------------------------------------------------------------------------
 // Condition resource assembly

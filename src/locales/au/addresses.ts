@@ -1,5 +1,5 @@
-import type { AddressTemplate, CityDefinition, RandomFn } from "../../core/types.js";
-import { randomInt } from "../../core/generators/rng.js";
+import type { AddressTemplate, CityDefinition, RandomFn } from "@/core/types.js";
+import { randomInt } from "@/core/generators/rng.js";
 
 // Postcode ranges per state, from research doc
 const STATE_POSTCODE_RANGES: Record<string, [number, number]> = {

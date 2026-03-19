@@ -1,5 +1,5 @@
-import type { AddressTemplate, RandomFn } from "../../core/types.js";
-import { pickRandom, randomInt } from "../../core/generators/rng.js";
+import type { AddressTemplate, RandomFn } from "@/core/types.js";
+import { pickRandom, randomInt } from "@/core/generators/rng.js";
 
 // SA, SD, SS are not used as postcode letter pairs
 const INVALID_NL_PAIRS = new Set(["SA", "SD", "SS"]);

@@ -1,9 +1,9 @@
-import type { FhirResource, Locale } from "../types.js";
-import { createRng, pickRandom, randomInt } from "../generators/rng.js";
+import type { FhirResource, Locale } from "@/core/types.js";
+import { createRng, pickRandom, randomInt } from "@/core/generators/rng.js";
 import { generateUuidV4, deepMerge, generateDateTime } from "./utils.js";
-import { COMMON_LOINC_CODES } from "../data/loinc-codes.js";
-import type { LoincCode } from "../data/loinc-codes.js";
-import type { RandomFn } from "../types.js";
+import { COMMON_LOINC_CODES } from "@/core/data/loinc-codes.js";
+import type { LoincCode } from "@/core/data/loinc-codes.js";
+import type { RandomFn } from "@/core/types.js";
 
 // ---------------------------------------------------------------------------
 // Value generation

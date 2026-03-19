@@ -3,7 +3,7 @@
  * Locales import these and include them in their LocaleDefinition.
  * All generators use only the provided RandomFn — no Math.random().
  */
-import type { IdentifierDefinition, RandomFn } from "../types.js";
+import type { IdentifierDefinition, RandomFn } from "@/core/types.js";
 import {
   luhnCheckDigit,
   luhnValidate,

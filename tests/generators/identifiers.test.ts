@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createRng } from "../../src/core/generators/rng.js";
+import { createRng } from "@/core/generators/rng.js";
 import {
   nhsNumberDefinition,
   odsCodDefinition,
@@ -25,8 +25,8 @@ import {
   ssnDefinition,
   npiDefinition,
   mrnDefinition,
-} from "../../src/core/generators/identifiers.js";
-import type { IdentifierDefinition } from "../../src/core/types.js";
+} from "@/core/generators/identifiers.js";
+import type { IdentifierDefinition } from "@/core/types.js";
 
 const ALL_DEFINITIONS: IdentifierDefinition[] = [
   nhsNumberDefinition,

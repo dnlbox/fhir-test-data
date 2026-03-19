@@ -1,28 +1,8 @@
-import type { FhirResource, Locale } from "../types.js";
-import { createRng, pickRandom } from "../generators/rng.js";
-import { generateName } from "../generators/names.js";
-import { getLocale } from "../../locales/index.js";
-
-// ---------------------------------------------------------------------------
-// UUID v4 from seeded PRNG (same algorithm as patient builder)
-// ---------------------------------------------------------------------------
-
-import type { RandomFn } from "../types.js";
-
-function generateUuidV4(rng: RandomFn): string {
-  const hex = (bits: number): string =>
-    Math.floor(rng() * (1 << bits))
-      .toString(16)
-      .padStart(bits / 4, "0");
-
-  const p1 = hex(32);
-  const p2 = hex(16);
-  const p3 = "4" + hex(12);
-  const variant = (8 + Math.floor(rng() * 4)).toString(16);
-  const p4 = variant + hex(12);
-  const p5 = hex(32) + hex(16);
-  return `${p1}-${p2}-${p3}-${p4}-${p5}`;
-}
+import type { FhirResource, Locale, RandomFn } from "@/core/types.js";
+import { createRng, pickRandom } from "@/core/generators/rng.js";
+import { generateName } from "@/core/generators/names.js";
+import { generateUuidV4, deepMerge } from "./utils.js";
+import { getLocale } from "@/locales/index.js";
 
 // ---------------------------------------------------------------------------
 // Locale-appropriate title/prefix
@@ -57,17 +37,17 @@ function buildPractitioner(locale: Locale, rng: RandomFn): FhirResource {
     family: familyName,
     given: generatedName.given,
     prefix: [TITLE_BY_LOCALE[locale]],
+    ...(generatedName.familyPrefix !== undefined && {
+      _family: {
+        extension: [
+          {
+            url: "http://hl7.org/fhir/StructureDefinition/humanname-own-prefix",
+            valueString: generatedName.familyPrefix,
+          },
+        ],
+      },
+    }),
   };
-  if (generatedName.familyPrefix !== undefined) {
-    nameEntry["_family"] = {
-      extension: [
-        {
-          url: "http://hl7.org/fhir/StructureDefinition/humanname-own-prefix",
-          valueString: generatedName.familyPrefix,
-        },
-      ],
-    };
-  }
 
   const identifiers: Array<{ system: string; value: string }> = [];
   if (localeDef.practitionerIdentifiers.length > 0) {
@@ -80,13 +60,7 @@ function buildPractitioner(locale: Locale, rng: RandomFn): FhirResource {
     id: generateUuidV4(rng),
     identifier: identifiers,
     name: [nameEntry],
-    telecom: [
-      {
-        system: "email",
-        value: email,
-        use: "work",
-      },
-    ],
+    telecom: [{ system: "email", value: email, use: "work" }],
     gender,
     qualification: [
       {
@@ -102,37 +76,6 @@ function buildPractitioner(locale: Locale, rng: RandomFn): FhirResource {
       },
     ],
   };
-}
-
-// ---------------------------------------------------------------------------
-// Deep merge (same as patient builder)
-// ---------------------------------------------------------------------------
-
-function deepMerge(
-  base: Record<string, unknown>,
-  overrides: Record<string, unknown>,
-): Record<string, unknown> {
-  const result: Record<string, unknown> = { ...base };
-  for (const key of Object.keys(overrides)) {
-    const overrideVal = overrides[key];
-    const baseVal = base[key];
-    if (
-      overrideVal !== null &&
-      typeof overrideVal === "object" &&
-      !Array.isArray(overrideVal) &&
-      baseVal !== null &&
-      typeof baseVal === "object" &&
-      !Array.isArray(baseVal)
-    ) {
-      result[key] = deepMerge(
-        baseVal as Record<string, unknown>,
-        overrideVal as Record<string, unknown>,
-      );
-    } else {
-      result[key] = overrideVal;
-    }
-  }
-  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -156,42 +99,26 @@ interface PractitionerBuilderState {
 
 function makeBuilder(state: PractitionerBuilderState): PractitionerBuilder {
   return {
-    locale(loc: Locale): PractitionerBuilder {
-      return makeBuilder({ ...state, locale: loc });
-    },
-    count(n: number): PractitionerBuilder {
-      return makeBuilder({ ...state, count: n });
-    },
-    seed(s: number): PractitionerBuilder {
-      return makeBuilder({ ...state, seed: s });
-    },
+    locale(loc: Locale):  PractitionerBuilder { return makeBuilder({ ...state, locale: loc }); },
+    count(n: number):     PractitionerBuilder { return makeBuilder({ ...state, count: n }); },
+    seed(s: number):      PractitionerBuilder { return makeBuilder({ ...state, seed: s }); },
     overrides(o: Record<string, unknown>): PractitionerBuilder {
       return makeBuilder({ ...state, overrideMap: o });
     },
     build(): FhirResource[] {
       const rng = createRng(state.seed);
-      const results: FhirResource[] = [];
-      for (let i = 0; i < state.count; i++) {
+      const hasOverrides = Object.keys(state.overrideMap).length > 0;
+      return Array.from({ length: state.count }, () => {
         const practitioner = buildPractitioner(state.locale, rng);
-        if (Object.keys(state.overrideMap).length > 0) {
-          results.push(
-            deepMerge(practitioner as Record<string, unknown>, state.overrideMap) as FhirResource,
-          );
-        } else {
-          results.push(practitioner);
-        }
-      }
-      return results;
+        return hasOverrides
+          ? deepMerge(practitioner as Record<string, unknown>, state.overrideMap) as FhirResource
+          : practitioner;
+      });
     },
   };
 }
 
 /** Create a new PractitionerBuilder with default options. */
 export function createPractitionerBuilder(): PractitionerBuilder {
-  return makeBuilder({
-    locale: "us",
-    count: 1,
-    seed: 0,
-    overrideMap: {},
-  });
+  return makeBuilder({ locale: "us", count: 1, seed: 0, overrideMap: {} });
 }

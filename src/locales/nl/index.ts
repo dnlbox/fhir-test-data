@@ -2,10 +2,10 @@ import {
   bsnDefinition,
   uziNumberDefinition,
   agbCodeDefinition,
-} from "../../core/generators/identifiers.js";
+} from "@/core/generators/identifiers.js";
 import { nlAddressTemplate } from "./addresses.js";
 import { nlNamePool } from "./names.js";
-import type { LocaleDefinition } from "../../core/types.js";
+import type { LocaleDefinition } from "@/core/types.js";
 
 export const nlLocale: LocaleDefinition = {
   code: "nl",

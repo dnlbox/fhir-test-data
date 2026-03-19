@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { createOrganizationBuilder } from "../../src/core/builders/organization.js";
+import { createOrganizationBuilder } from "@/core/builders/organization.js";
 import {
   odsCodDefinition,
   npiDefinition,
   hpioDefinition,
-} from "../../src/core/generators/identifiers.js";
-import { SUPPORTED_LOCALES } from "../../src/core/types.js";
-import { getLocale } from "../../src/locales/index.js";
+} from "@/core/generators/identifiers.js";
+import { SUPPORTED_LOCALES } from "@/core/types.js";
+import { getLocale } from "@/locales/index.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

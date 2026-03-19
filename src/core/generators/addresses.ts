@@ -1,4 +1,4 @@
-import type { AddressTemplate, RandomFn } from "../types.js";
+import type { AddressTemplate, RandomFn } from "@/core/types.js";
 import { pickRandom, randomInt } from "./rng.js";
 
 export interface GeneratedAddress {

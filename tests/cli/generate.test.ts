@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Command } from "commander";
-import { registerGenerateCommand } from "../../src/cli/commands/generate.js";
+import { registerGenerateCommand } from "@/cli/commands/generate.js";
 
 // ---------------------------------------------------------------------------
 // Helpers to capture stdout/stderr

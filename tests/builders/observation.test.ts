@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { createObservationBuilder } from "../../src/core/builders/observation.js";
-import { COMMON_LOINC_CODES } from "../../src/core/data/loinc-codes.js";
+import { createObservationBuilder } from "@/core/builders/observation.js";
+import { COMMON_LOINC_CODES } from "@/core/data/loinc-codes.js";
 
 const LOINC_CODES = COMMON_LOINC_CODES.map((c) => c.code);
 const VITAL_SIGN_CODES = COMMON_LOINC_CODES.filter((c) => c.category === "vital-signs").map((c) => c.code);
