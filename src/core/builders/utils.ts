@@ -1,5 +1,5 @@
-import type { RandomFn } from "../types.js";
-import { randomInt } from "../generators/rng.js";
+import type { RandomFn } from "@/core/types.js";
+import { randomInt } from "@/core/generators/rng.js";
 
 export function generateUuidV4(rng: RandomFn): string {
   const hex = (bits: number): string =>

@@ -1,4 +1,4 @@
-import type { NamePool } from "../../core/types.js";
+import type { NamePool } from "@/core/types.js";
 
 export const nlNamePool: NamePool = {
   given: {

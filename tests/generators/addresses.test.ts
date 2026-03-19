@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { createRng } from "../../src/core/generators/rng.js";
-import { generateAddress } from "../../src/core/generators/addresses.js";
-import { usAddressTemplate } from "../../src/locales/us/addresses.js";
-import { ukAddressTemplate } from "../../src/locales/uk/addresses.js";
-import { auAddressTemplate } from "../../src/locales/au/addresses.js";
-import { caAddressTemplate } from "../../src/locales/ca/addresses.js";
-import { deAddressTemplate } from "../../src/locales/de/addresses.js";
-import { frAddressTemplate } from "../../src/locales/fr/addresses.js";
-import { nlAddressTemplate } from "../../src/locales/nl/addresses.js";
-import { inAddressTemplate } from "../../src/locales/in/addresses.js";
+import { createRng } from "@/core/generators/rng.js";
+import { generateAddress } from "@/core/generators/addresses.js";
+import { usAddressTemplate } from "@/locales/us/addresses.js";
+import { ukAddressTemplate } from "@/locales/uk/addresses.js";
+import { auAddressTemplate } from "@/locales/au/addresses.js";
+import { caAddressTemplate } from "@/locales/ca/addresses.js";
+import { deAddressTemplate } from "@/locales/de/addresses.js";
+import { frAddressTemplate } from "@/locales/fr/addresses.js";
+import { nlAddressTemplate } from "@/locales/nl/addresses.js";
+import { inAddressTemplate } from "@/locales/in/addresses.js";
 
 describe("US addresses", () => {
   it("generates address with country US", () => {

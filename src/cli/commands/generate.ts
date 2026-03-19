@@ -1,16 +1,16 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Command } from "commander";
-import { createPatientBuilder } from "../../core/builders/patient.js";
-import { createPractitionerBuilder } from "../../core/builders/practitioner.js";
-import { createOrganizationBuilder } from "../../core/builders/organization.js";
-import { createObservationBuilder } from "../../core/builders/observation.js";
-import { createConditionBuilder } from "../../core/builders/condition.js";
-import { createAllergyIntoleranceBuilder } from "../../core/builders/allergy-intolerance.js";
-import { createMedicationStatementBuilder } from "../../core/builders/medication-statement.js";
-import { createBundleBuilder } from "../../core/builders/bundle.js";
-import { SUPPORTED_LOCALES } from "../../core/types.js";
-import type { Locale, FhirResource } from "../../core/types.js";
+import { createPatientBuilder } from "@/core/builders/patient.js";
+import { createPractitionerBuilder } from "@/core/builders/practitioner.js";
+import { createOrganizationBuilder } from "@/core/builders/organization.js";
+import { createObservationBuilder } from "@/core/builders/observation.js";
+import { createConditionBuilder } from "@/core/builders/condition.js";
+import { createAllergyIntoleranceBuilder } from "@/core/builders/allergy-intolerance.js";
+import { createMedicationStatementBuilder } from "@/core/builders/medication-statement.js";
+import { createBundleBuilder } from "@/core/builders/bundle.js";
+import { SUPPORTED_LOCALES } from "@/core/types.js";
+import type { Locale, FhirResource } from "@/core/types.js";
 
 // ---------------------------------------------------------------------------
 // Resource type → builder factory

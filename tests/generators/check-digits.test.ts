@@ -11,7 +11,7 @@ import {
   modulus97Key,
   modulus97Validate,
   modulus10CheckDigit,
-} from "../../src/core/generators/check-digits.js";
+} from "@/core/generators/check-digits.js";
 
 describe("Luhn", () => {
   it("validates known-valid AU IHI 8003608833357361", () => {

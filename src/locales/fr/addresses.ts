@@ -1,5 +1,5 @@
-import type { AddressTemplate, RandomFn } from "../../core/types.js";
-import { randomInt } from "../../core/generators/rng.js";
+import type { AddressTemplate, RandomFn } from "@/core/types.js";
+import { randomInt } from "@/core/generators/rng.js";
 
 const FR_STREET_TYPES = [
   "Rue", "Avenue", "Boulevard", "Place", "Impasse", "Allée", "Chemin", "Route",

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createPractitionerBuilder } from "../../src/core/builders/practitioner.js";
+import { createPractitionerBuilder } from "@/core/builders/practitioner.js";
 import {
   npiDefinition,
   gmcNumberDefinition,
@@ -7,9 +7,9 @@ import {
   hpiiDefinition,
   uziNumberDefinition,
   rppsDefinition,
-} from "../../src/core/generators/identifiers.js";
-import { SUPPORTED_LOCALES } from "../../src/core/types.js";
-import { getLocale } from "../../src/locales/index.js";
+} from "@/core/generators/identifiers.js";
+import { SUPPORTED_LOCALES } from "@/core/types.js";
+import { getLocale } from "@/locales/index.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

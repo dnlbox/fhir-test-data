@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createBundleBuilder } from "../../src/core/builders/bundle.js";
+import { createBundleBuilder } from "@/core/builders/bundle.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

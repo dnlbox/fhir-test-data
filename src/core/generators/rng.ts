@@ -1,4 +1,4 @@
-import type { RandomFn } from "../types.js";
+import type { RandomFn } from "@/core/types.js";
 
 /**
  * Mulberry32 PRNG — fast, simple, good distribution for test data generation.

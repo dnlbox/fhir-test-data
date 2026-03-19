@@ -1,5 +1,5 @@
-import type { FhirResource, Locale } from "../types.js";
-import { createRng, randomInt } from "../generators/rng.js";
+import type { FhirResource, Locale } from "@/core/types.js";
+import { createRng, randomInt } from "@/core/generators/rng.js";
 import { generateUuidV4 } from "./utils.js";
 import { createPatientBuilder } from "./patient.js";
 import { createPractitionerBuilder } from "./practitioner.js";
@@ -8,7 +8,7 @@ import { createObservationBuilder } from "./observation.js";
 import { createConditionBuilder } from "./condition.js";
 import { createAllergyIntoleranceBuilder } from "./allergy-intolerance.js";
 import { createMedicationStatementBuilder } from "./medication-statement.js";
-import type { RandomFn } from "../types.js";
+import type { RandomFn } from "@/core/types.js";
 
 // ---------------------------------------------------------------------------
 // Bundle types

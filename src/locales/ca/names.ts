@@ -1,4 +1,4 @@
-import type { NamePool } from "../../core/types.js";
+import type { NamePool } from "@/core/types.js";
 
 // Canadian name pool — bilingual (English + French)
 export const caNamePool: NamePool = {

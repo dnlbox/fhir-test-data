@@ -1,5 +1,5 @@
-import type { AddressTemplate, CityDefinition, RandomFn } from "../../core/types.js";
-import { pickRandom, randomInt } from "../../core/generators/rng.js";
+import type { AddressTemplate, CityDefinition, RandomFn } from "@/core/types.js";
+import { pickRandom, randomInt } from "@/core/generators/rng.js";
 
 // PIN code first digit → region; use plausible ranges per state
 const STATE_PIN_RANGES: Record<string, [number, number]> = {

@@ -1,5 +1,5 @@
-import type { AddressTemplate, RandomFn } from "../../core/types.js";
-import { pickRandom, randomInt } from "../../core/generators/rng.js";
+import type { AddressTemplate, RandomFn } from "@/core/types.js";
+import { pickRandom, randomInt } from "@/core/generators/rng.js";
 
 // PLZ ranges roughly map: 0xxxx=East, 1xxxx=Berlin/Brandenburg, 2xxxx=North, etc.
 const STATE_PLZ_PREFIXES: Record<string, number[]> = {

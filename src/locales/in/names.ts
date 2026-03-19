@@ -1,4 +1,4 @@
-import type { NamePool } from "../../core/types.js";
+import type { NamePool } from "@/core/types.js";
 
 // Indian names from major language groups: Hindi, Tamil, Telugu, Bengali, Marathi, Kannada, Malayalam
 export const inNamePool: NamePool = {

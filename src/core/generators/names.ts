@@ -1,4 +1,4 @@
-import type { NamePool, RandomFn } from "../types.js";
+import type { NamePool, RandomFn } from "@/core/types.js";
 import { pickRandom } from "./rng.js";
 
 export interface GeneratedName {

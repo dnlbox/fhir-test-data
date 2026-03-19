@@ -2,10 +2,10 @@ import {
   ssnDefinition,
   mrnDefinition,
   npiDefinition,
-} from "../../core/generators/identifiers.js";
+} from "@/core/generators/identifiers.js";
 import { usAddressTemplate } from "./addresses.js";
 import { usNamePool } from "./names.js";
-import type { LocaleDefinition } from "../../core/types.js";
+import type { LocaleDefinition } from "@/core/types.js";
 
 export const usLocale: LocaleDefinition = {
   code: "us",

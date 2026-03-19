@@ -1,8 +1,8 @@
-import type { FhirResource, Locale } from "../types.js";
-import { createRng, pickRandom } from "../generators/rng.js";
+import type { FhirResource, Locale } from "@/core/types.js";
+import { createRng, pickRandom } from "@/core/generators/rng.js";
 import { generateUuidV4, deepMerge, generateDate } from "./utils.js";
-import { COMMON_MEDICATION_CODES } from "../data/medication-codes.js";
-import type { RandomFn } from "../types.js";
+import { COMMON_MEDICATION_CODES } from "@/core/data/medication-codes.js";
+import type { RandomFn } from "@/core/types.js";
 
 // ---------------------------------------------------------------------------
 // MedicationStatement resource assembly

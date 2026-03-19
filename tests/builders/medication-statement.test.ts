@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { createMedicationStatementBuilder } from "../../src/core/builders/medication-statement.js";
-import { COMMON_MEDICATION_CODES } from "../../src/core/data/medication-codes.js";
+import { createMedicationStatementBuilder } from "@/core/builders/medication-statement.js";
+import { COMMON_MEDICATION_CODES } from "@/core/data/medication-codes.js";
 
 const MED_CODES = COMMON_MEDICATION_CODES.map((c) => c.code);
 

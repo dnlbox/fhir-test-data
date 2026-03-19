@@ -1,5 +1,5 @@
-import type { AddressTemplate, RandomFn } from "../../core/types.js";
-import { randomInt } from "../../core/generators/rng.js";
+import type { AddressTemplate, RandomFn } from "@/core/types.js";
+import { randomInt } from "@/core/generators/rng.js";
 
 export const usAddressTemplate: AddressTemplate = {
   streets: [
