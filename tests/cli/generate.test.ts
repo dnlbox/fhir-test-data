@@ -371,6 +371,48 @@ describe("practitioner-role resource", () => {
     const types = lines.map((l) => (JSON.parse(l) as Record<string, unknown>)["resourceType"]);
     expect(types).toContain("PractitionerRole");
   });
+
+  it("generate all: PractitionerRole.practitioner references the Practitioner in the same session", () => {
+    const cap = createCapture();
+    const program = new Command();
+    program.exitOverride();
+    registerGenerateCommand(program);
+    try {
+      program.parse(["node", "fhir-test-data", "generate", "all", "--seed", "42", "--no-pretty"]);
+    } finally {
+      cap.restore();
+    }
+    const lines = cap.out.join("").trim().split("\n").filter(Boolean);
+    const resources = lines.map((l) => JSON.parse(l) as Record<string, unknown>);
+    const byType = Object.fromEntries(resources.map((r) => [r["resourceType"] as string, r]));
+
+    const practId = byType["Practitioner"]?.["id"] as string;
+    const role = byType["PractitionerRole"] as Record<string, unknown>;
+    const roleRef = (role?.["practitioner"] as Record<string, unknown>)?.["reference"] as string;
+
+    expect(roleRef).toBe(`Practitioner/${practId}`);
+  });
+
+  it("generate all: PractitionerRole.organization references the Organization in the same session", () => {
+    const cap = createCapture();
+    const program = new Command();
+    program.exitOverride();
+    registerGenerateCommand(program);
+    try {
+      program.parse(["node", "fhir-test-data", "generate", "all", "--seed", "42", "--no-pretty"]);
+    } finally {
+      cap.restore();
+    }
+    const lines = cap.out.join("").trim().split("\n").filter(Boolean);
+    const resources = lines.map((l) => JSON.parse(l) as Record<string, unknown>);
+    const byType = Object.fromEntries(resources.map((r) => [r["resourceType"] as string, r]));
+
+    const orgId = byType["Organization"]?.["id"] as string;
+    const role = byType["PractitionerRole"] as Record<string, unknown>;
+    const roleOrgRef = (role?.["organization"] as Record<string, unknown>)?.["reference"] as string;
+
+    expect(roleOrgRef).toBe(`Organization/${orgId}`);
+  });
 });
 
 describe("NDJSON stdout — spec 18", () => {

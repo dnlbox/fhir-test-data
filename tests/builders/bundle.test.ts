@@ -53,12 +53,13 @@ describe("Bundle structure", () => {
     ).toBe(true);
   });
 
-  it("contains Patient, Organization, and Practitioner", () => {
+  it("contains Patient, Organization, Practitioner, and PractitionerRole", () => {
     const [b] = createBundleBuilder().seed(3).build();
     const bundle = b as Record<string, unknown>;
     expect(findResourceByType(bundle, "Patient")).toBeDefined();
     expect(findResourceByType(bundle, "Organization")).toBeDefined();
     expect(findResourceByType(bundle, "Practitioner")).toBeDefined();
+    expect(findResourceByType(bundle, "PractitionerRole")).toBeDefined();
   });
 
   it("contains at least one clinical resource", () => {
@@ -258,6 +259,59 @@ describe("Determinism", () => {
     const a = createBundleBuilder().seed(1).build();
     const b = createBundleBuilder().seed(2).build();
     expect(a).not.toEqual(b);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PractitionerRole reference integrity
+// ---------------------------------------------------------------------------
+
+describe("PractitionerRole reference integrity", () => {
+  it("PractitionerRole.practitioner references the Practitioner in the same bundle", () => {
+    const [b] = createBundleBuilder().seed(42).build();
+    const bundle = b as Record<string, unknown>;
+
+    const pract = findResourceByType(bundle, "Practitioner");
+    const role = findResourceByType(bundle, "PractitionerRole");
+    expect(pract).toBeDefined();
+    expect(role).toBeDefined();
+
+    const practId = pract?.["id"] as string;
+    const roleRef = (role?.["practitioner"] as Record<string, unknown>)?.["reference"] as string;
+    expect(roleRef).toBe(`Practitioner/${practId}`);
+  });
+
+  it("PractitionerRole.organization references the Organization in the same bundle", () => {
+    const [b] = createBundleBuilder().seed(42).build();
+    const bundle = b as Record<string, unknown>;
+
+    const org = findResourceByType(bundle, "Organization");
+    const role = findResourceByType(bundle, "PractitionerRole");
+    expect(org).toBeDefined();
+    expect(role).toBeDefined();
+
+    const orgId = org?.["id"] as string;
+    const roleOrgRef = (role?.["organization"] as Record<string, unknown>)?.["reference"] as string;
+    expect(roleOrgRef).toBe(`Organization/${orgId}`);
+  });
+
+  it("PractitionerRole references are consistent across multiple seeds", () => {
+    for (const seed of [1, 10, 99, 1234]) {
+      const [b] = createBundleBuilder().seed(seed).build();
+      const bundle = b as Record<string, unknown>;
+
+      const pract = findResourceByType(bundle, "Practitioner");
+      const org = findResourceByType(bundle, "Organization");
+      const role = findResourceByType(bundle, "PractitionerRole");
+
+      const practId = pract?.["id"] as string;
+      const orgId = org?.["id"] as string;
+      const roleRef = (role?.["practitioner"] as Record<string, unknown>)?.["reference"];
+      const roleOrgRef = (role?.["organization"] as Record<string, unknown>)?.["reference"];
+
+      expect(roleRef).toBe(`Practitioner/${practId}`);
+      expect(roleOrgRef).toBe(`Organization/${orgId}`);
+    }
   });
 });
 
