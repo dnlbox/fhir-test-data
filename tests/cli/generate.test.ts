@@ -207,6 +207,86 @@ describe("invalid resource type", () => {
 });
 
 // ---------------------------------------------------------------------------
+// --faults flag
+// ---------------------------------------------------------------------------
+
+describe("--faults flag", () => {
+  it("missing-resource-type removes resourceType from every resource", () => {
+    const { out } = runCLI([
+      "generate", "patient", "--count", "3", "--seed", "42", "--faults", "missing-resource-type",
+    ]);
+    const resources = JSON.parse(out) as Record<string, unknown>[];
+    for (const r of resources) {
+      expect(r).not.toHaveProperty("resourceType");
+    }
+  });
+
+  it("missing-id removes id from every resource", () => {
+    const { out } = runCLI([
+      "generate", "patient", "--seed", "10", "--faults", "missing-id",
+    ]);
+    const r = JSON.parse(out);
+    expect(r).not.toHaveProperty("id");
+  });
+
+  it("invalid-gender sets gender to INVALID_GENDER", () => {
+    const { out } = runCLI([
+      "generate", "patient", "--seed", "5", "--faults", "invalid-gender",
+    ]);
+    const r = JSON.parse(out);
+    expect(r["gender"]).toBe("INVALID_GENDER");
+  });
+
+  it("multiple faults comma-separated apply all violations", () => {
+    const { out } = runCLI([
+      "generate", "patient", "--seed", "7", "--faults", "missing-id,invalid-gender",
+    ]);
+    const r = JSON.parse(out);
+    expect(r).not.toHaveProperty("id");
+    expect(r["gender"]).toBe("INVALID_GENDER");
+  });
+
+  it("random fault modifies the resource", () => {
+    const { out: clean } = runCLI(["generate", "patient", "--seed", "1"]);
+    const { out: faulty } = runCLI(["generate", "patient", "--seed", "1", "--faults", "random"]);
+    expect(clean).not.toBe(faulty);
+  });
+
+  it("random fault with same seed is reproducible", () => {
+    const { out: r1 } = runCLI(["generate", "patient", "--seed", "99", "--faults", "random"]);
+    const { out: r2 } = runCLI(["generate", "patient", "--seed", "99", "--faults", "random"]);
+    expect(r1).toBe(r2);
+  });
+
+  it("exits 1 with error message for unknown fault type", () => {
+    let threw = false;
+    let errOutput = "";
+    try {
+      runCLI(["generate", "patient", "--seed", "1", "--faults", "not-a-real-fault"]);
+    } catch (e) {
+      threw = true;
+      if (e instanceof CLIError) errOutput = e.err;
+    }
+    expect(threw).toBe(true);
+    expect(exitCode).toBe(1);
+    expect(errOutput).toContain("Unknown fault type");
+  });
+
+  it("works with --format ndjson", () => {
+    const { out } = runCLI([
+      "generate", "patient", "--count", "2", "--seed", "3",
+      "--format", "ndjson", "--faults", "missing-id",
+    ]);
+    const lines = out.trim().split("\n");
+    expect(lines).toHaveLength(2);
+    for (const line of lines) {
+      const r = JSON.parse(line);
+      expect(r).not.toHaveProperty("id");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Determinism
 // ---------------------------------------------------------------------------
 

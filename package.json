@@ -47,6 +47,10 @@
     ".": {
       "import": "./dist/core/index.js",
       "types": "./dist/core/index.d.ts"
+    },
+    "./faults": {
+      "import": "./dist/core/faults/index.js",
+      "types": "./dist/core/faults/index.d.ts"
     }
   },
   "scripts": {
