@@ -11,9 +11,12 @@ import { createMedicationStatementBuilder } from "@/core/builders/medication-sta
 import { createBundleBuilder } from "@/core/builders/bundle.js";
 import { SUPPORTED_LOCALES } from "@/core/types.js";
 import type { Locale, FhirResource } from "@/core/types.js";
+import { injectFaults, FAULT_TYPES } from "@/core/faults/index.js";
+import type { FaultType } from "@/core/faults/index.js";
+import { createRng } from "@/core/generators/rng.js";
 
 // ---------------------------------------------------------------------------
-// Resource type → builder factory
+// Resource type → builder factory (lookup table replaces switch)
 // ---------------------------------------------------------------------------
 
 type ResourceType =
@@ -27,17 +30,28 @@ type ResourceType =
   | "bundle"
   | "all";
 
-const RESOURCE_TYPES: ResourceType[] = [
-  "patient",
-  "practitioner",
-  "organization",
-  "observation",
-  "condition",
-  "allergy-intolerance",
-  "medication-statement",
-  "bundle",
-  "all",
-];
+type ConcreteResourceType = Exclude<ResourceType, "all">;
+
+const BUILDER_FACTORIES: Record<
+  ConcreteResourceType,
+  (locale: Locale, count: number, seed: number) => FhirResource[]
+> = {
+  patient:              (l, c, s) => createPatientBuilder().locale(l).count(c).seed(s).build(),
+  practitioner:         (l, c, s) => createPractitionerBuilder().locale(l).count(c).seed(s).build(),
+  organization:         (l, c, s) => createOrganizationBuilder().locale(l).count(c).seed(s).build(),
+  observation:          (l, c, s) => createObservationBuilder().locale(l).count(c).seed(s).build(),
+  condition:            (l, c, s) => createConditionBuilder().locale(l).count(c).seed(s).build(),
+  "allergy-intolerance":(l, c, s) => createAllergyIntoleranceBuilder().locale(l).count(c).seed(s).build(),
+  "medication-statement":(l, c, s) => createMedicationStatementBuilder().locale(l).count(c).seed(s).build(),
+  bundle:               (l, c, s) => createBundleBuilder().locale(l).count(c).seed(s).build(),
+};
+
+const CONCRETE_RESOURCE_TYPES = Object.keys(BUILDER_FACTORIES) as ConcreteResourceType[];
+const ALL_RESOURCE_TYPES: ResourceType[] = [...CONCRETE_RESOURCE_TYPES, "all"];
+
+// ---------------------------------------------------------------------------
+// Options
+// ---------------------------------------------------------------------------
 
 interface GenerateOptions {
   locale: string;
@@ -46,33 +60,27 @@ interface GenerateOptions {
   output?: string;
   format: string;
   pretty: boolean;
+  faults?: string;
 }
 
-function buildResources(
-  resourceType: Exclude<ResourceType, "all">,
-  locale: Locale,
-  count: number,
-  seed: number,
-): FhirResource[] {
-  switch (resourceType) {
-    case "patient":
-      return createPatientBuilder().locale(locale).count(count).seed(seed).build();
-    case "practitioner":
-      return createPractitionerBuilder().locale(locale).count(count).seed(seed).build();
-    case "organization":
-      return createOrganizationBuilder().locale(locale).count(count).seed(seed).build();
-    case "observation":
-      return createObservationBuilder().locale(locale).count(count).seed(seed).build();
-    case "condition":
-      return createConditionBuilder().locale(locale).count(count).seed(seed).build();
-    case "allergy-intolerance":
-      return createAllergyIntoleranceBuilder().locale(locale).count(count).seed(seed).build();
-    case "medication-statement":
-      return createMedicationStatementBuilder().locale(locale).count(count).seed(seed).build();
-    case "bundle":
-      return createBundleBuilder().locale(locale).count(count).seed(seed).build();
+// ---------------------------------------------------------------------------
+// Fault parsing
+// ---------------------------------------------------------------------------
+
+function parseFaults(raw: string): FaultType[] | { error: string } {
+  const types = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  const invalid = types.filter((t) => !FAULT_TYPES.includes(t as FaultType));
+  if (invalid.length > 0) {
+    return {
+      error: `Unknown fault type(s): ${invalid.join(", ")}. Valid types: ${FAULT_TYPES.join(", ")}`,
+    };
   }
+  return types as FaultType[];
 }
+
+// ---------------------------------------------------------------------------
+// Output helpers
+// ---------------------------------------------------------------------------
 
 function formatIndex(i: number, total: number): string {
   const width = Math.max(3, String(total).length);
@@ -81,12 +89,12 @@ function formatIndex(i: number, total: number): string {
 
 function writeToOutput(
   resources: FhirResource[],
-  resourceType: Exclude<ResourceType, "all">,
+  resourceType: ConcreteResourceType,
   outputDir: string,
   format: string,
 ): void {
   mkdirSync(outputDir, { recursive: true });
-  const fhirType = resources[0]?.["resourceType"] as string | undefined ?? resourceType;
+  const fhirType = (resources[0]?.["resourceType"] as string | undefined) ?? resourceType;
 
   if (format === "ndjson") {
     const content = resources.map((r) => JSON.stringify(r)).join("\n") + "\n";
@@ -100,7 +108,9 @@ function writeToOutput(
     }
   }
 
-  process.stderr.write(`Generated ${resources.length} ${fhirType} resource${resources.length === 1 ? "" : "s"} in ${outputDir}\n`);
+  process.stderr.write(
+    `Generated ${resources.length} ${fhirType} resource${resources.length === 1 ? "" : "s"} in ${outputDir}\n`,
+  );
 }
 
 function writeToStdout(resources: FhirResource[], format: string, pretty: boolean): void {
@@ -117,16 +127,18 @@ function writeToStdout(resources: FhirResource[], format: string, pretty: boolea
   }
 }
 
+// ---------------------------------------------------------------------------
+// Main action
+// ---------------------------------------------------------------------------
+
 function runGenerate(resourceType: string, opts: GenerateOptions): void {
-  // Validate resource type
-  if (!RESOURCE_TYPES.includes(resourceType as ResourceType)) {
+  if (!ALL_RESOURCE_TYPES.includes(resourceType as ResourceType)) {
     process.stderr.write(
-      `Error: unknown resource type "${resourceType}". Valid types: ${RESOURCE_TYPES.join(", ")}\n`,
+      `Error: unknown resource type "${resourceType}". Valid types: ${ALL_RESOURCE_TYPES.join(", ")}\n`,
     );
     process.exit(1);
   }
 
-  // Validate locale
   if (!SUPPORTED_LOCALES.includes(opts.locale as Locale)) {
     process.stderr.write(
       `Error: unknown locale "${opts.locale}". Supported locales: ${SUPPORTED_LOCALES.join(", ")}\n`,
@@ -134,26 +146,37 @@ function runGenerate(resourceType: string, opts: GenerateOptions): void {
     process.exit(1);
   }
 
+  // Parse faults before doing any work.
+  let faults: FaultType[] = [];
+  if (opts.faults !== undefined) {
+    const parsed = parseFaults(opts.faults);
+    if ("error" in parsed) {
+      process.stderr.write(`Error: ${parsed.error}\n`);
+      process.exit(1);
+    }
+    faults = parsed;
+  }
+
   const locale = opts.locale as Locale;
   const count = Number.parseInt(opts.count, 10);
-  const seed = opts.seed !== undefined ? Number.parseInt(opts.seed, 10) : Math.floor(Math.random() * 0x7fffffff);
+  const seed =
+    opts.seed !== undefined
+      ? Number.parseInt(opts.seed, 10)
+      : Math.floor(Math.random() * 0x7fffffff);
   const format = opts.format === "ndjson" ? "ndjson" : "json";
 
-  const typesToGenerate: Exclude<ResourceType, "all">[] = resourceType === "all"
-    ? [
-        "patient",
-        "practitioner",
-        "organization",
-        "observation",
-        "condition",
-        "allergy-intolerance",
-        "medication-statement",
-        "bundle",
-      ]
-    : [resourceType as Exclude<ResourceType, "all">];
+  const typesToGenerate: ConcreteResourceType[] =
+    resourceType === "all" ? CONCRETE_RESOURCE_TYPES : [resourceType as ConcreteResourceType];
 
   for (const type of typesToGenerate) {
-    const resources = buildResources(type, locale, count, seed);
+    let resources = BUILDER_FACTORIES[type](locale, count, seed);
+
+    if (faults.length > 0) {
+      // Use a separate RNG for fault injection so it doesn't affect generation
+      // reproducibility. Seed it deterministically from the main seed.
+      const faultRng = createRng(seed + 1);
+      resources = resources.map((r) => injectFaults(r, faults, faultRng));
+    }
 
     if (opts.output !== undefined) {
       try {
@@ -172,9 +195,7 @@ function runGenerate(resourceType: string, opts: GenerateOptions): void {
 export function registerGenerateCommand(program: Command): void {
   program
     .command("generate <resource-type>")
-    .description(
-      `Generate FHIR resources. Resource types: ${RESOURCE_TYPES.join(", ")}`,
-    )
+    .description(`Generate FHIR resources. Resource types: ${ALL_RESOURCE_TYPES.join(", ")}`)
     .option("--locale <code>", "locale for identifiers and addresses", "us")
     .option("--count <n>", "number of resources to generate", "1")
     .option("--seed <n>", "seed for deterministic output")
@@ -182,5 +203,9 @@ export function registerGenerateCommand(program: Command): void {
     .option("--format <fmt>", "output format: json | ndjson", "json")
     .option("--pretty", "pretty-print JSON (default for stdout)", true)
     .option("--no-pretty", "compact JSON output")
+    .option(
+      "--faults <types>",
+      `comma-separated fault types to inject. Valid: ${FAULT_TYPES.join(", ")}`,
+    )
     .action(runGenerate);
 }

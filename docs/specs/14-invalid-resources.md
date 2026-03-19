@@ -1,6 +1,6 @@
 # Spec 14 — Invalid resource generation
 
-**Status:** pending
+**Status:** complete
 
 ## Goal
 
