@@ -4,13 +4,21 @@
 test resources with country-aware identifiers — no production data copying, no hardcoded
 US-only identifiers.
 
+## Try it without installing
+
+Run directly with `npx` — no install needed:
+
+```bash
+npx fhir-test-data generate patient --locale uk --count 1 --seed 42
+```
+
 ## Install
 
 ```bash
 # Project-local (for library use or CI)
 pnpm add -D fhir-test-data
 
-# Global install (for CLI use)
+# Global install (for repeated CLI use)
 pnpm add -g fhir-test-data
 # or
 npm install -g fhir-test-data

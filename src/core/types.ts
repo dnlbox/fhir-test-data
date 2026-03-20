@@ -99,6 +99,11 @@ export interface IdentifierDefinition {
   /** Human-readable name (e.g., "NHS Number") */
   name: string;
   /**
+   * Check-digit algorithm name, if applicable (e.g., "Modulus 11", "Luhn", "Verhoeff").
+   * Omitted for identifiers validated by format/range only.
+   */
+  algorithm?: string;
+  /**
    * Generate a valid identifier value.
    * `context` is provided by the patient builder when demographic data is
    * available. Implementations that don't need it can safely ignore the
@@ -107,6 +112,24 @@ export interface IdentifierDefinition {
   generate: (rng: RandomFn, context?: IdentifierContext) => string;
   /** Validate an identifier value */
   validate: (value: string) => boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Annotation types
+// ---------------------------------------------------------------------------
+
+/** A single human-readable note explaining a field in a generated resource. */
+export interface AnnotationNote {
+  /** JSONPath-style field reference (e.g., "identifier[0].value") */
+  path: string;
+  /** Plain-language explanation of the field and its value */
+  note: string;
+}
+
+/** A generated FHIR resource paired with human-readable field explanations. */
+export interface AnnotatedResource {
+  resource: FhirResource;
+  notes: AnnotationNote[];
 }
 
 // ---------------------------------------------------------------------------

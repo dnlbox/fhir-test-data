@@ -6,6 +6,30 @@ locales, resource types, bundle wiring, and edge cases.
 
 ---
 
+## Pipe-friendly CLI
+
+The CLI writes to stdout by default. Pipe it into `jq`, validators, load testing tools, or
+AI assistants — no configuration needed.
+
+```bash
+# Extract identifiers with jq
+fhir-test-data generate patient --locale uk --seed 42 | jq '.identifier[0]'
+
+# Stream NDJSON into a validator
+fhir-test-data generate patient --count 100 --format ndjson | your-fhir-validator --stream
+
+# POST to a FHIR server
+fhir-test-data generate patient --locale nl --seed 1 | \
+  curl -s -X POST https://your-fhir-server/Patient \
+    -H "Content-Type: application/fhir+json" -d @-
+
+# Hand off to an AI assistant to inspect or explain
+fhir-test-data generate bundle --locale kr --seed 5 | \
+  llm "summarise the clinical findings in this FHIR bundle"
+```
+
+---
+
 ## Generating a UK patient
 
 A United Kingdom patient includes an NHS Number — a 10-digit identifier validated with
@@ -74,6 +98,18 @@ fhir-test-data generate patient --locale in --seed 42
 
 # German practitioner — LANR (doctor registration number) with Modulus 10
 fhir-test-data generate practitioner --locale de --seed 42
+
+# South Korean patient — RRN with gender-encoded digit
+fhir-test-data generate patient --locale kr --seed 42
+
+# Brazilian patient — CPF with Modulus 11 variant check
+fhir-test-data generate patient --locale br --seed 42
+
+# South African patient — SA ID number with Luhn check
+fhir-test-data generate patient --locale za --seed 42
+
+# Singaporean patient — NRIC / FIN with check letter
+fhir-test-data generate patient --locale sg --seed 42
 ```
 
 All generated identifiers pass the official check-digit algorithm for their country.
@@ -106,6 +142,21 @@ All references are wired:
 - `Observation.subject` → Patient
 - `Observation.performer[0]` → Practitioner
 - `Condition.subject` → Patient
+
+---
+
+## Clinical code quality
+
+Observations use real LOINC codes — blood pressure, BMI, glucose, haemoglobin — with
+`valueQuantity` in clinically plausible ranges and HL7-consistent units of measurement
+(`mm[Hg]`, `kg/m2`, `mg/dL`, `g/dL`). Conditions use SNOMED CT codes. AllergyIntolerance
+resources include coded substances.
+
+```bash
+# Generate an observation and inspect the LOINC code and units
+fhir-test-data generate observation \
+  --locale uk --seed 10 | jq '{code: .code.coding[0], value: .valueQuantity}'
+```
 
 ---
 
@@ -213,7 +264,7 @@ fhir-test-data generate patient \
   --output ./fixtures/
 
 # Mixed locale bundle set
-for locale in us uk au de fr nl; do
+for locale in us uk au de fr nl jp kr; do
   fhir-test-data generate bundle \
     --locale $locale \
     --count 10 \

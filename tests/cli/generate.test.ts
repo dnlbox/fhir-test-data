@@ -46,14 +46,14 @@ class CLIError extends Error {
   }
 }
 
-function runCLI(args: string[]): CLIResult {
+async function runCLI(args: string[]): Promise<CLIResult> {
   const program = new Command();
   program.exitOverride(); // prevent process.exit in tests
   registerGenerateCommand(program);
 
   const cap = createCapture();
   try {
-    program.parse(["node", "fhir-test-data", ...args]);
+    await program.parseAsync(["node", "fhir-test-data", ...args]);
   } catch (e) {
     cap.restore();
     throw new CLIError(e instanceof Error ? e.message : String(e), cap.out.join(""), cap.err.join(""));
@@ -74,9 +74,12 @@ beforeEach(() => {
     exitCode = typeof code === "number" ? code : 1;
     throw new Error(`process.exit(${exitCode})`);
   });
+  // Treat stdin as a TTY in tests so readStdinOverrides returns immediately
+  Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true });
 });
 
 afterEach(() => {
+  Object.defineProperty(process.stdin, "isTTY", { value: undefined, configurable: true });
   vi.restoreAllMocks();
 });
 
@@ -85,14 +88,14 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("generate to stdout", () => {
-  it("generates a single patient as JSON", () => {
-    const { out } = runCLI(["generate", "patient", "--seed", "42"]);
+  it("generates a single patient as JSON", async () => {
+    const { out } = await runCLI(["generate", "patient", "--seed", "42"]);
     const parsed = JSON.parse(out);
     expect(parsed["resourceType"]).toBe("Patient");
   });
 
-  it("generates multiple patients as JSON array", () => {
-    const { out } = runCLI(["generate", "patient", "--count", "3", "--seed", "1"]);
+  it("generates multiple patients as JSON array", async () => {
+    const { out } = await runCLI(["generate", "patient", "--count", "3", "--seed", "1"]);
     const parsed = JSON.parse(out);
     expect(Array.isArray(parsed)).toBe(true);
     expect(parsed).toHaveLength(3);
@@ -101,8 +104,8 @@ describe("generate to stdout", () => {
     }
   });
 
-  it("generates NDJSON with --format ndjson", () => {
-    const { out } = runCLI(["generate", "patient", "--count", "3", "--seed", "2", "--format", "ndjson"]);
+  it("generates NDJSON with --format ndjson", async () => {
+    const { out } = await runCLI(["generate", "patient", "--count", "3", "--seed", "2", "--format", "ndjson"]);
     const lines = out.trim().split("\n");
     expect(lines).toHaveLength(3);
     for (const line of lines) {
@@ -111,44 +114,44 @@ describe("generate to stdout", () => {
     }
   });
 
-  it("generates a practitioner", () => {
-    const { out } = runCLI(["generate", "practitioner", "--seed", "10"]);
+  it("generates a practitioner", async () => {
+    const { out } = await runCLI(["generate", "practitioner", "--seed", "10"]);
     const parsed = JSON.parse(out);
     expect(parsed["resourceType"]).toBe("Practitioner");
   });
 
-  it("generates an organization", () => {
-    const { out } = runCLI(["generate", "organization", "--seed", "11"]);
+  it("generates an organization", async () => {
+    const { out } = await runCLI(["generate", "organization", "--seed", "11"]);
     const parsed = JSON.parse(out);
     expect(parsed["resourceType"]).toBe("Organization");
   });
 
-  it("generates an observation", () => {
-    const { out } = runCLI(["generate", "observation", "--seed", "12"]);
+  it("generates an observation", async () => {
+    const { out } = await runCLI(["generate", "observation", "--seed", "12"]);
     const parsed = JSON.parse(out);
     expect(parsed["resourceType"]).toBe("Observation");
   });
 
-  it("generates a condition", () => {
-    const { out } = runCLI(["generate", "condition", "--seed", "13"]);
+  it("generates a condition", async () => {
+    const { out } = await runCLI(["generate", "condition", "--seed", "13"]);
     const parsed = JSON.parse(out);
     expect(parsed["resourceType"]).toBe("Condition");
   });
 
-  it("generates a bundle", () => {
-    const { out } = runCLI(["generate", "bundle", "--seed", "14"]);
+  it("generates a bundle", async () => {
+    const { out } = await runCLI(["generate", "bundle", "--seed", "14"]);
     const parsed = JSON.parse(out);
     expect(parsed["resourceType"]).toBe("Bundle");
     expect(Array.isArray(parsed["entry"])).toBe(true);
   });
 
-  it("generates one of each resource with 'all'", () => {
+  it("generates one of each resource with 'all'", async () => {
     const cap = createCapture();
     const program = new Command();
     program.exitOverride();
     registerGenerateCommand(program);
     try {
-      program.parse(["node", "fhir-test-data", "generate", "all", "--seed", "99"]);
+      await program.parseAsync(["node", "fhir-test-data", "generate", "all", "--seed", "99"]);
     } finally {
       cap.restore();
     }
@@ -163,19 +166,19 @@ describe("generate to stdout", () => {
 // ---------------------------------------------------------------------------
 
 describe("locale validation", () => {
-  it("accepts valid locales (uk, au, de, fr, nl, in, ca)", () => {
+  it("accepts valid locales (uk, au, de, fr, nl, in, ca)", async () => {
     for (const locale of ["uk", "au", "de", "fr", "nl", "in", "ca"]) {
-      const { out } = runCLI(["generate", "patient", "--locale", locale, "--seed", "1"]);
+      const { out } = await runCLI(["generate", "patient", "--locale", locale, "--seed", "1"]);
       const parsed = JSON.parse(out);
       expect(parsed["resourceType"]).toBe("Patient");
     }
   });
 
-  it("exits 1 with error message for invalid locale", () => {
+  it("exits 1 with error message for invalid locale", async () => {
     let threw = false;
     let errOutput = "";
     try {
-      runCLI(["generate", "patient", "--locale", "zz"]);
+      await runCLI(["generate", "patient", "--locale", "zz"]);
     } catch (e) {
       threw = true;
       if (e instanceof CLIError) errOutput = e.err;
@@ -191,11 +194,11 @@ describe("locale validation", () => {
 // ---------------------------------------------------------------------------
 
 describe("invalid resource type", () => {
-  it("exits 1 with error message for unknown resource type", () => {
+  it("exits 1 with error message for unknown resource type", async () => {
     let threw = false;
     let errOutput = "";
     try {
-      runCLI(["generate", "nonsense-resource", "--seed", "1"]);
+      await runCLI(["generate", "nonsense-resource", "--seed", "1"]);
     } catch (e) {
       threw = true;
       if (e instanceof CLIError) errOutput = e.err;
@@ -211,8 +214,8 @@ describe("invalid resource type", () => {
 // ---------------------------------------------------------------------------
 
 describe("--faults flag", () => {
-  it("missing-resource-type removes resourceType from every resource", () => {
-    const { out } = runCLI([
+  it("missing-resource-type removes resourceType from every resource", async () => {
+    const { out } = await runCLI([
       "generate", "patient", "--count", "3", "--seed", "42", "--faults", "missing-resource-type",
     ]);
     const resources = JSON.parse(out) as Record<string, unknown>[];
@@ -221,24 +224,24 @@ describe("--faults flag", () => {
     }
   });
 
-  it("missing-id removes id from every resource", () => {
-    const { out } = runCLI([
+  it("missing-id removes id from every resource", async () => {
+    const { out } = await runCLI([
       "generate", "patient", "--seed", "10", "--faults", "missing-id",
     ]);
     const r = JSON.parse(out);
     expect(r).not.toHaveProperty("id");
   });
 
-  it("invalid-gender sets gender to INVALID_GENDER", () => {
-    const { out } = runCLI([
+  it("invalid-gender sets gender to INVALID_GENDER", async () => {
+    const { out } = await runCLI([
       "generate", "patient", "--seed", "5", "--faults", "invalid-gender",
     ]);
     const r = JSON.parse(out);
     expect(r["gender"]).toBe("INVALID_GENDER");
   });
 
-  it("multiple faults comma-separated apply all violations", () => {
-    const { out } = runCLI([
+  it("multiple faults comma-separated apply all violations", async () => {
+    const { out } = await runCLI([
       "generate", "patient", "--seed", "7", "--faults", "missing-id,invalid-gender",
     ]);
     const r = JSON.parse(out);
@@ -246,23 +249,23 @@ describe("--faults flag", () => {
     expect(r["gender"]).toBe("INVALID_GENDER");
   });
 
-  it("random fault modifies the resource", () => {
-    const { out: clean } = runCLI(["generate", "patient", "--seed", "1"]);
-    const { out: faulty } = runCLI(["generate", "patient", "--seed", "1", "--faults", "random"]);
+  it("random fault modifies the resource", async () => {
+    const { out: clean } = await runCLI(["generate", "patient", "--seed", "1"]);
+    const { out: faulty } = await runCLI(["generate", "patient", "--seed", "1", "--faults", "random"]);
     expect(clean).not.toBe(faulty);
   });
 
-  it("random fault with same seed is reproducible", () => {
-    const { out: r1 } = runCLI(["generate", "patient", "--seed", "99", "--faults", "random"]);
-    const { out: r2 } = runCLI(["generate", "patient", "--seed", "99", "--faults", "random"]);
+  it("random fault with same seed is reproducible", async () => {
+    const { out: r1 } = await runCLI(["generate", "patient", "--seed", "99", "--faults", "random"]);
+    const { out: r2 } = await runCLI(["generate", "patient", "--seed", "99", "--faults", "random"]);
     expect(r1).toBe(r2);
   });
 
-  it("exits 1 with error message for unknown fault type", () => {
+  it("exits 1 with error message for unknown fault type", async () => {
     let threw = false;
     let errOutput = "";
     try {
-      runCLI(["generate", "patient", "--seed", "1", "--faults", "not-a-real-fault"]);
+      await runCLI(["generate", "patient", "--seed", "1", "--faults", "not-a-real-fault"]);
     } catch (e) {
       threw = true;
       if (e instanceof CLIError) errOutput = e.err;
@@ -272,8 +275,8 @@ describe("--faults flag", () => {
     expect(errOutput).toContain("Unknown fault type");
   });
 
-  it("works with --format ndjson", () => {
-    const { out } = runCLI([
+  it("works with --format ndjson", async () => {
+    const { out } = await runCLI([
       "generate", "patient", "--count", "2", "--seed", "3",
       "--format", "ndjson", "--faults", "missing-id",
     ]);
@@ -291,15 +294,15 @@ describe("--faults flag", () => {
 // ---------------------------------------------------------------------------
 
 describe("determinism via CLI", () => {
-  it("same seed produces identical JSON output", () => {
-    const { out: out1 } = runCLI(["generate", "patient", "--locale", "uk", "--seed", "42"]);
-    const { out: out2 } = runCLI(["generate", "patient", "--locale", "uk", "--seed", "42"]);
+  it("same seed produces identical JSON output", async () => {
+    const { out: out1 } = await runCLI(["generate", "patient", "--locale", "uk", "--seed", "42"]);
+    const { out: out2 } = await runCLI(["generate", "patient", "--locale", "uk", "--seed", "42"]);
     expect(out1).toBe(out2);
   });
 
-  it("different seeds produce different output", () => {
-    const { out: out1 } = runCLI(["generate", "patient", "--seed", "1"]);
-    const { out: out2 } = runCLI(["generate", "patient", "--seed", "2"]);
+  it("different seeds produce different output", async () => {
+    const { out: out1 } = await runCLI(["generate", "patient", "--seed", "1"]);
+    const { out: out2 } = await runCLI(["generate", "patient", "--seed", "2"]);
     expect(out1).not.toBe(out2);
   });
 });
@@ -309,31 +312,31 @@ describe("determinism via CLI", () => {
 // ---------------------------------------------------------------------------
 
 describe("--fhir-version flag", () => {
-  it("R5 medication-statement produces MedicationUsage", () => {
-    const { out } = runCLI([
+  it("R5 medication-statement produces MedicationUsage", async () => {
+    const { out } = await runCLI([
       "generate", "medication-statement", "--seed", "1", "--fhir-version", "R5",
     ]);
     const r = JSON.parse(out) as Record<string, unknown>;
     expect(r["resourceType"]).toBe("MedicationUsage");
   });
 
-  it("R4 (default) medication-statement produces MedicationStatement", () => {
-    const { out } = runCLI(["generate", "medication-statement", "--seed", "1"]);
+  it("R4 (default) medication-statement produces MedicationStatement", async () => {
+    const { out } = await runCLI(["generate", "medication-statement", "--seed", "1"]);
     const r = JSON.parse(out) as Record<string, unknown>;
     expect(r["resourceType"]).toBe("MedicationStatement");
   });
 
-  it("R4B produces same structure as R4 for patient", () => {
-    const { out: r4Out } = runCLI(["generate", "patient", "--seed", "5", "--fhir-version", "R4"]);
-    const { out: r4bOut } = runCLI(["generate", "patient", "--seed", "5", "--fhir-version", "R4B"]);
+  it("R4B produces same structure as R4 for patient", async () => {
+    const { out: r4Out } = await runCLI(["generate", "patient", "--seed", "5", "--fhir-version", "R4"]);
+    const { out: r4bOut } = await runCLI(["generate", "patient", "--seed", "5", "--fhir-version", "R4B"]);
     expect(JSON.parse(r4Out)).toEqual(JSON.parse(r4bOut));
   });
 
-  it("unknown fhir-version exits 1 and writes to stderr", () => {
+  it("unknown fhir-version exits 1 and writes to stderr", async () => {
     let threw = false;
     let errOutput = "";
     try {
-      runCLI(["generate", "patient", "--fhir-version", "R6"]);
+      await runCLI(["generate", "patient", "--fhir-version", "R6"]);
     } catch (e) {
       threw = true;
       if (e instanceof CLIError) errOutput = e.err;
@@ -343,27 +346,27 @@ describe("--fhir-version flag", () => {
     expect(errOutput).toContain("unknown FHIR version");
   });
 
-  it("--fhir-version R5 with --seed is deterministic", () => {
-    const { out: out1 } = runCLI(["generate", "patient", "--locale", "uk", "--seed", "42", "--fhir-version", "R5"]);
-    const { out: out2 } = runCLI(["generate", "patient", "--locale", "uk", "--seed", "42", "--fhir-version", "R5"]);
+  it("--fhir-version R5 with --seed is deterministic", async () => {
+    const { out: out1 } = await runCLI(["generate", "patient", "--locale", "uk", "--seed", "42", "--fhir-version", "R5"]);
+    const { out: out2 } = await runCLI(["generate", "patient", "--locale", "uk", "--seed", "42", "--fhir-version", "R5"]);
     expect(out1).toBe(out2);
   });
 });
 
 describe("practitioner-role resource", () => {
-  it("generates a PractitionerRole resource", () => {
-    const { out } = runCLI(["generate", "practitioner-role", "--seed", "42"]);
+  it("generates a PractitionerRole resource", async () => {
+    const { out } = await runCLI(["generate", "practitioner-role", "--seed", "42"]);
     const parsed = JSON.parse(out);
     expect(parsed["resourceType"]).toBe("PractitionerRole");
   });
 
-  it("generate all includes PractitionerRole", () => {
+  it("generate all includes PractitionerRole", async () => {
     const cap = createCapture();
     const program = new Command();
     program.exitOverride();
     registerGenerateCommand(program);
     try {
-      program.parse(["node", "fhir-test-data", "generate", "all", "--seed", "1", "--no-pretty"]);
+      await program.parseAsync(["node", "fhir-test-data", "generate", "all", "--seed", "1", "--no-pretty"]);
     } finally {
       cap.restore();
     }
@@ -372,13 +375,13 @@ describe("practitioner-role resource", () => {
     expect(types).toContain("PractitionerRole");
   });
 
-  it("generate all: PractitionerRole.practitioner references the Practitioner in the same session", () => {
+  it("generate all: PractitionerRole.practitioner references the Practitioner in the same session", async () => {
     const cap = createCapture();
     const program = new Command();
     program.exitOverride();
     registerGenerateCommand(program);
     try {
-      program.parse(["node", "fhir-test-data", "generate", "all", "--seed", "42", "--no-pretty"]);
+      await program.parseAsync(["node", "fhir-test-data", "generate", "all", "--seed", "42", "--no-pretty"]);
     } finally {
       cap.restore();
     }
@@ -393,13 +396,13 @@ describe("practitioner-role resource", () => {
     expect(roleRef).toBe(`Practitioner/${practId}`);
   });
 
-  it("generate all: PractitionerRole.organization references the Organization in the same session", () => {
+  it("generate all: PractitionerRole.organization references the Organization in the same session", async () => {
     const cap = createCapture();
     const program = new Command();
     program.exitOverride();
     registerGenerateCommand(program);
     try {
-      program.parse(["node", "fhir-test-data", "generate", "all", "--seed", "42", "--no-pretty"]);
+      await program.parseAsync(["node", "fhir-test-data", "generate", "all", "--seed", "42", "--no-pretty"]);
     } finally {
       cap.restore();
     }
@@ -416,13 +419,13 @@ describe("practitioner-role resource", () => {
 });
 
 describe("NDJSON stdout — spec 18", () => {
-  it("generate all emits one compact JSON object per line", () => {
+  it("generate all emits one compact JSON object per line", async () => {
     const cap = createCapture();
     const program = new Command();
     program.exitOverride();
     registerGenerateCommand(program);
     try {
-      program.parse(["node", "fhir-test-data", "generate", "all", "--seed", "1"]);
+      await program.parseAsync(["node", "fhir-test-data", "generate", "all", "--seed", "1"]);
     } finally {
       cap.restore();
     }
@@ -433,13 +436,13 @@ describe("NDJSON stdout — spec 18", () => {
     }
   });
 
-  it("generate all with --pretty still emits one compact JSON object per line", () => {
+  it("generate all with --pretty still emits one compact JSON object per line", async () => {
     const cap = createCapture();
     const program = new Command();
     program.exitOverride();
     registerGenerateCommand(program);
     try {
-      program.parse(["node", "fhir-test-data", "generate", "all", "--seed", "1", "--pretty"]);
+      await program.parseAsync(["node", "fhir-test-data", "generate", "all", "--seed", "1", "--pretty"]);
     } finally {
       cap.restore();
     }
@@ -449,8 +452,8 @@ describe("NDJSON stdout — spec 18", () => {
     }
   });
 
-  it("single resource with --pretty still pretty-prints", () => {
-    const { out } = runCLI(["generate", "patient", "--seed", "1", "--pretty"]);
+  it("single resource with --pretty still pretty-prints", async () => {
+    const { out } = await runCLI(["generate", "patient", "--seed", "1", "--pretty"]);
     // Pretty-printed output has newlines (more than 1 line when parsed)
     expect(out.split("\n").length).toBeGreaterThan(2);
     expect(() => JSON.parse(out)).not.toThrow();

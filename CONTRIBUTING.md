@@ -69,7 +69,7 @@ cover every field in the FHIR spec, will not be accepted.
 | Contribution | Why |
 |---|---|
 | StructureDefinition-driven generation | Changes the fundamental character of the project |
-| Clinical realism simulation (disease progression, realistic lab ranges over time) | Use Synthea for this |
+| Clinical realism simulation (disease progression, realistic lab ranges over time) | [Synthea](https://github.com/synthetichealth/synthea) is purpose-built for this |
 | FHIRPath evaluation | Different problem domain |
 | FHIR terminology server integration | Requires live infrastructure |
 | XML output | JSON-only by design |
