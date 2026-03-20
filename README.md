@@ -1,5 +1,10 @@
 # fhir-test-data
 
+[![CI](https://github.com/dnlbox/fhir-test-data/actions/workflows/ci.yml/badge.svg)](https://github.com/dnlbox/fhir-test-data/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/dnlbox/fhir-test-data/actions/workflows/codeql.yml/badge.svg)](https://github.com/dnlbox/fhir-test-data/actions/workflows/codeql.yml)
+[![npm](https://img.shields.io/npm/v/fhir-test-data)](https://www.npmjs.com/package/fhir-test-data)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 Generate valid FHIR R4 / R4B / R5 test resources with country-aware identifiers — from the CLI, a TypeScript library, or any tool that reads from a pipe.
 
 ---
