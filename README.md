@@ -311,21 +311,6 @@ fhir-resource-diff compare ./fixtures/Bundle-001.json ./expected/Bundle.json
 
 ---
 
-## Contributing
-
-Issues and pull requests welcome. Run the test suite before opening a PR:
-
-```bash
-pnpm install
-pnpm typecheck
-pnpm lint
-pnpm test
-```
-
-All 8 locale pools must meet minimum sizes: 30+ given names per gender, 40+ family names. New locales follow the pattern in `src/locales/us/`.
-
 ---
 
-## License
-
-MIT
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and [CHANGELOG.md](CHANGELOG.md) for version history.
