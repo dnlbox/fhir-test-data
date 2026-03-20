@@ -42,17 +42,22 @@ How `fhir-test-data` fits relative to other tools in the TypeScript/JavaScript F
 ### When to use fhir-test-data
 
 - You need **TypeScript-native** test data generation (no Java runtime, no CLI wrapper)
-- You need **internationally correct** identifiers (NHS numbers, BSNs, Aadhaar, etc.)
+- You need **internationally correct** identifiers across 14 locales (NHS numbers, BSNs, Aadhaar, CPF, RRN, and more)
 - You need **deterministic** fixtures — the same seed gives the same data across CI runs
+- You need **clinically meaningful codes** — LOINC observations with HL7-consistent units, SNOMED CT conditions
+- You need a **pipe-friendly CLI** for generating fixture files without writing code, or for feeding data into other tools
 - You need a **browser-safe** library for testing in non-Node environments
-- You need a **CLI** for generating fixture files without writing code
 
-### When to use Synthea instead
+### When to use Synthea
 
-- You need **clinically realistic patient histories** with disease progression over time
-- You need **research-grade** synthetic data that models epidemiology and care pathways
-- US-only identifiers are acceptable for your use case
-- Clinical simulation accuracy matters more than TypeScript integration
+[Synthea](https://github.com/synthetichealth/synthea) is a great open-source project that
+has contributed enormously to the healthcare simulation and research community. It generates
+clinically realistic longitudinal patient histories — disease progression, care pathways,
+medication histories — that model real epidemiology over time. If that level of clinical
+realism is what your use case requires, Synthea is the right tool.
+
+fhir-test-data serves a different set of needs: fast, deterministic, internationally correct
+fixtures for developer testing workflows, without a Java runtime or a long generation step.
 
 ---
 

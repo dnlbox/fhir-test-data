@@ -32,6 +32,7 @@ import { randomDigits, randomInt, pickRandom } from "./rng.js";
 export const nhsNumberDefinition: IdentifierDefinition = {
   system: "https://fhir.nhs.uk/Id/nhs-number",
   name: "NHS Number",
+  algorithm: "Modulus 11",
   generate(rng: RandomFn): string {
     // Retry until we get a valid check digit (10 is invalid)
     for (;;) {
@@ -86,6 +87,7 @@ export const gmcNumberDefinition: IdentifierDefinition = {
 export const ihiDefinition: IdentifierDefinition = {
   system: "http://ns.electronichealth.net.au/id/hi/ihi/1.0",
   name: "Individual Healthcare Identifier (IHI)",
+  algorithm: "Luhn",
   generate(rng: RandomFn): string {
     // 16 digits: prefix 800360 + 9 random + 1 Luhn check
     const prefix = "800360";
@@ -101,6 +103,7 @@ export const ihiDefinition: IdentifierDefinition = {
 export const medicareNumberDefinition: IdentifierDefinition = {
   system: "http://ns.electronichealth.net.au/id/medicare-number",
   name: "Medicare Number",
+  algorithm: "Weighted sum (mod 10)",
   generate(rng: RandomFn): string {
     // Positions 1-7: random digits. Position 8: weighted check. Position 9: ref. Position 10: IRN.
     const MEDICARE_WEIGHTS = [1, 3, 7, 9, 1, 3, 7] as const;
@@ -130,6 +133,7 @@ export const medicareNumberDefinition: IdentifierDefinition = {
 export const hpiiDefinition: IdentifierDefinition = {
   system: "http://ns.electronichealth.net.au/id/hi/hpii/1.0",
   name: "Healthcare Provider Identifier — Individual (HPI-I)",
+  algorithm: "Luhn",
   generate(rng: RandomFn): string {
     const prefix = "800361";
     const body = randomDigits(9, rng);
@@ -144,6 +148,7 @@ export const hpiiDefinition: IdentifierDefinition = {
 export const hpioDefinition: IdentifierDefinition = {
   system: "http://ns.electronichealth.net.au/id/hi/hpio/1.0",
   name: "Healthcare Provider Identifier — Organisation (HPI-O)",
+  algorithm: "Luhn",
   generate(rng: RandomFn): string {
     const prefix = "800362";
     const body = randomDigits(9, rng);
@@ -162,6 +167,7 @@ export const hpioDefinition: IdentifierDefinition = {
 export const aadhaarDefinition: IdentifierDefinition = {
   system: "https://healthid.ndhm.gov.in/api/v1/auth/aadhaar",
   name: "Aadhaar Number",
+  algorithm: "Verhoeff",
   generate(rng: RandomFn): string {
     // 12 digits: 11 random + 1 Verhoeff check digit
     const eleven = randomDigits(11, rng);
@@ -234,6 +240,7 @@ export const iknrDefinition: IdentifierDefinition = {
 export const lanrDefinition: IdentifierDefinition = {
   system: "http://fhir.de/sid/kbv/lanr",
   name: "Lebenslange Arztnummer (LANR)",
+  algorithm: "Modulus 10",
   generate(rng: RandomFn): string {
     // 9 digits: 6 base + 1 modulus-10 check + 2 specialty suffix
     const six = randomDigits(6, rng);
@@ -265,6 +272,7 @@ export const bsnrDefinition: IdentifierDefinition = {
 export const nirDefinition: IdentifierDefinition = {
   system: "https://annuaire.sante.fr",
   name: "NIR (Numéro d'Inscription au Répertoire)",
+  algorithm: "Modulus 97",
   generate(rng: RandomFn): string {
     // 13 digits + 2-digit Modulus 97 key = 15 chars total
     // gender digit: 1 or 2; year: 00-99; dept: 01-95; etc.
@@ -296,6 +304,7 @@ export const finessDefinition: IdentifierDefinition = {
 export const rppsDefinition: IdentifierDefinition = {
   system: "https://annuaire.sante.fr",
   name: "RPPS Number",
+  algorithm: "Luhn",
   generate(rng: RandomFn): string {
     // 11 digits with Luhn check
     const ten = randomDigits(10, rng);
@@ -313,6 +322,7 @@ export const rppsDefinition: IdentifierDefinition = {
 export const bsnDefinition: IdentifierDefinition = {
   system: "http://fhir.nl/fhir/NamingSystem/bsn",
   name: "Burgerservicenummer (BSN)",
+  algorithm: "11-proef",
   generate(rng: RandomFn): string {
     for (;;) {
       const eight = randomDigits(8, rng);
@@ -384,6 +394,7 @@ export const ssnDefinition: IdentifierDefinition = {
 export const npiDefinition: IdentifierDefinition = {
   system: "http://hl7.org/fhir/sid/us-npi",
   name: "National Provider Identifier (NPI)",
+  algorithm: "Luhn",
   generate(rng: RandomFn): string {
     // Generate 9 random digits, prepend 80840 for Luhn, use check digit as 10th NPI digit
     const nine = randomDigits(9, rng);
@@ -447,6 +458,7 @@ const RRN_GENDER_DIGIT: Record<string, string> = {
 export const krRrnDefinition: IdentifierDefinition = {
   system: "http://www.mohw.go.kr/fhir/NamingSystem/rrn",
   name: "Resident Registration Number (RRN)",
+  algorithm: "RRN check digit (weighted sum mod 11)",
   generate(rng: RandomFn, context?: IdentifierContext): string {
     // Birth year: use builder-supplied value when available, otherwise generate.
     // "Otherwise" preserves the original rng call order for standalone use.
@@ -488,6 +500,7 @@ const NRIC_PREFIXES = ["S", "S", "S", "T", "T", "F", "G"] as const;
 export const sgNricDefinition: IdentifierDefinition = {
   system: "http://hl7.org.sg/fhir/NamingSystem/nric-fin",
   name: "NRIC / FIN",
+  algorithm: "NRIC check letter",
   generate(rng: RandomFn): string {
     const prefix = pickRandom([...NRIC_PREFIXES], rng);
     const digits = randomDigits(7, rng);
@@ -506,6 +519,7 @@ export const sgNricDefinition: IdentifierDefinition = {
 export const brCpfDefinition: IdentifierDefinition = {
   system: "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cpf",
   name: "CPF (Cadastro de Pessoas Físicas)",
+  algorithm: "Modulus 11 (CPF two-digit check)",
   generate(rng: RandomFn): string {
     for (;;) {
       const nine = randomDigits(9, rng);
@@ -569,6 +583,7 @@ export const mxCurpDefinition: IdentifierDefinition = {
 export const zaIdDefinition: IdentifierDefinition = {
   system: "http://www.rsaidentity.co.za/fhir/NamingSystem/said",
   name: "South African ID Number",
+  algorithm: "Luhn",
   generate(rng: RandomFn): string {
     // Format: YYMMDD + G (gender: 0-4 female, 5-9 male) + SSS + C(0) + A(8) + Z(Luhn)
     const year = randomInt(50, 99, rng).toString().padStart(2, "0");

@@ -10,11 +10,14 @@ import { createAllergyIntoleranceBuilder } from "@/core/builders/allergy-intoler
 import { createMedicationStatementBuilder } from "@/core/builders/medication-statement.js";
 import { createPractitionerRoleBuilder } from "@/core/builders/practitioner-role.js";
 import { createBundleBuilder } from "@/core/builders/bundle.js";
+import { deepMerge } from "@/core/builders/utils.js";
 import { SUPPORTED_LOCALES, SUPPORTED_FHIR_VERSIONS } from "@/core/types.js";
-import type { FhirVersion, Locale, FhirResource } from "@/core/types.js";
+import type { FhirVersion, Locale, FhirResource, AnnotatedResource } from "@/core/types.js";
 import { injectFaults, FAULT_TYPES } from "@/core/faults/index.js";
 import type { FaultType } from "@/core/faults/index.js";
 import { createRng } from "@/core/generators/rng.js";
+import { annotateResource } from "@/core/annotations/index.js";
+import { getLocale } from "@/locales/index.js";
 
 // ---------------------------------------------------------------------------
 // Resource type → builder factory (lookup table replaces switch)
@@ -65,6 +68,8 @@ interface GenerateOptions {
   format: string;
   pretty: boolean;
   faults?: string;
+  overrides?: string;
+  annotate: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -83,6 +88,43 @@ function parseFaults(raw: string): FaultType[] | { error: string } {
 }
 
 // ---------------------------------------------------------------------------
+// stdin overrides
+// ---------------------------------------------------------------------------
+
+/**
+ * Read stdin to completion and parse as JSON.
+ * Returns null if stdin is a TTY (interactive), empty, or not present.
+ * Rejects if the data is present but not valid JSON.
+ */
+async function readStdinOverrides(): Promise<Record<string, unknown> | null> {
+  if (process.stdin.isTTY) return null;
+  return new Promise((resolve, reject) => {
+    let data = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk: string) => {
+      data += chunk;
+    });
+    process.stdin.on("end", () => {
+      if (!data.trim()) {
+        resolve(null);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(data) as Record<string, unknown>;
+        resolve(parsed);
+      } catch {
+        reject(
+          new Error(
+            `stdin is not valid JSON. Received: ${data.slice(0, 120)}${data.length > 120 ? "…" : ""}`,
+          ),
+        );
+      }
+    });
+    process.stdin.on("error", reject);
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Output helpers
 // ---------------------------------------------------------------------------
 
@@ -91,44 +133,57 @@ function formatIndex(i: number, total: number): string {
   return String(i + 1).padStart(width, "0");
 }
 
+type OutputUnit = FhirResource | AnnotatedResource;
+
 function writeToOutput(
-  resources: FhirResource[],
+  units: OutputUnit[],
   resourceType: ConcreteResourceType,
   outputDir: string,
   format: string,
+  annotate: boolean,
 ): void {
   mkdirSync(outputDir, { recursive: true });
-  const fhirType = (resources[0]?.["resourceType"] as string | undefined) ?? resourceType;
+
+  // Derive file-name prefix from the actual FHIR resourceType when available.
+  const firstResource = annotate
+    ? (units[0] as AnnotatedResource | undefined)?.resource
+    : (units[0] as FhirResource | undefined);
+  const fhirType = (firstResource?.["resourceType"] as string | undefined) ?? resourceType;
 
   if (format === "ndjson") {
-    const content = resources.map((r) => JSON.stringify(r)).join("\n") + "\n";
+    const content = units.map((u) => JSON.stringify(u)).join("\n") + "\n";
     const filePath = join(outputDir, `${fhirType}.ndjson`);
     writeFileSync(filePath, content, "utf8");
   } else {
-    for (let i = 0; i < resources.length; i++) {
-      const idx = formatIndex(i, resources.length);
+    for (let i = 0; i < units.length; i++) {
+      const idx = formatIndex(i, units.length);
       const filePath = join(outputDir, `${fhirType}-${idx}.json`);
-      writeFileSync(filePath, JSON.stringify(resources[i], null, 2) + "\n", "utf8");
+      writeFileSync(filePath, JSON.stringify(units[i], null, 2) + "\n", "utf8");
     }
   }
 
   process.stderr.write(
-    `Generated ${resources.length} ${fhirType} resource${resources.length === 1 ? "" : "s"} in ${outputDir}\n`,
+    `Generated ${units.length} ${fhirType} resource${units.length === 1 ? "" : "s"} in ${outputDir}\n`,
   );
 }
 
-function writeToStdout(resources: FhirResource[], format: string, pretty: boolean, forceCompact = false): void {
+function writeToStdout(
+  units: OutputUnit[],
+  format: string,
+  pretty: boolean,
+  forceCompact = false,
+): void {
   if (format === "ndjson" || forceCompact) {
     // NDJSON output: always compact (pipe-safe). --pretty is a no-op for NDJSON stdout.
-    for (const r of resources) {
-      process.stdout.write(JSON.stringify(r) + "\n");
+    for (const u of units) {
+      process.stdout.write(JSON.stringify(u) + "\n");
     }
-  } else if (resources.length === 1) {
+  } else if (units.length === 1) {
     const indent = pretty ? 2 : undefined;
-    process.stdout.write(JSON.stringify(resources[0], null, indent) + "\n");
+    process.stdout.write(JSON.stringify(units[0], null, indent) + "\n");
   } else {
     const indent = pretty ? 2 : undefined;
-    process.stdout.write(JSON.stringify(resources, null, indent) + "\n");
+    process.stdout.write(JSON.stringify(units, null, indent) + "\n");
   }
 }
 
@@ -136,7 +191,7 @@ function writeToStdout(resources: FhirResource[], format: string, pretty: boolea
 // Main action
 // ---------------------------------------------------------------------------
 
-function runGenerate(resourceType: string, opts: GenerateOptions): void {
+async function runGenerate(resourceType: string, opts: GenerateOptions): Promise<void> {
   if (!ALL_RESOURCE_TYPES.includes(resourceType as ResourceType)) {
     process.stderr.write(
       `Error: unknown resource type "${resourceType}". Valid types: ${ALL_RESOURCE_TYPES.join(", ")}\n`,
@@ -169,6 +224,40 @@ function runGenerate(resourceType: string, opts: GenerateOptions): void {
     faults = parsed;
   }
 
+  // ---------------------------------------------------------------------------
+  // Resolve overrides: stdin (base) deep-merged with --overrides flag (wins on conflict)
+  // ---------------------------------------------------------------------------
+
+  let overridesObj: Record<string, unknown> = {};
+
+  try {
+    const stdinOverrides = await readStdinOverrides();
+    if (stdinOverrides !== null) {
+      overridesObj = stdinOverrides;
+    }
+  } catch (err: unknown) {
+    process.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}\n`);
+    process.exit(1);
+  }
+
+  if (opts.overrides !== undefined) {
+    try {
+      const cliOverrides = JSON.parse(opts.overrides) as Record<string, unknown>;
+      overridesObj = deepMerge(overridesObj, cliOverrides) as Record<string, unknown>;
+    } catch {
+      process.stderr.write(
+        `Error: --overrides value is not valid JSON. Received: ${opts.overrides.slice(0, 120)}\n`,
+      );
+      process.exit(1);
+    }
+  }
+
+  const hasOverrides = Object.keys(overridesObj).length > 0;
+
+  // ---------------------------------------------------------------------------
+  // Build resources
+  // ---------------------------------------------------------------------------
+
   const locale = opts.locale as Locale;
   const fhirVersion = opts.fhirVersion as FhirVersion;
   const count = Number.parseInt(opts.count, 10);
@@ -177,6 +266,7 @@ function runGenerate(resourceType: string, opts: GenerateOptions): void {
       ? Number.parseInt(opts.seed, 10)
       : Math.floor(Math.random() * 0x7fffffff);
   const format = opts.format === "ndjson" ? "ndjson" : "json";
+  const localeDefinition = getLocale(locale);
 
   const typesToGenerate: ConcreteResourceType[] =
     resourceType === "all" ? CONCRETE_RESOURCE_TYPES : [resourceType as ConcreteResourceType];
@@ -218,16 +308,31 @@ function runGenerate(resourceType: string, opts: GenerateOptions): void {
       resources = resources.map((r) => injectFaults(r, faults, faultRng));
     }
 
+    // Apply overrides (stdin + --overrides flag) to every resource.
+    if (hasOverrides) {
+      resources = resources.map(
+        (r) => deepMerge(r as Record<string, unknown>, overridesObj) as FhirResource,
+      );
+    }
+
+    // Wrap in annotations if requested.
+    const units: OutputUnit[] = opts.annotate
+      ? resources.map((r) => ({
+          resource: r,
+          notes: annotateResource(r, localeDefinition),
+        }))
+      : resources;
+
     if (opts.output !== undefined) {
       try {
-        writeToOutput(resources, type, opts.output, format);
+        writeToOutput(units, type, opts.output, format, opts.annotate);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         process.stderr.write(`Error writing output: ${message}\n`);
         process.exit(2);
       }
     } else {
-      writeToStdout(resources, format, opts.pretty, typesToGenerate.length > 1);
+      writeToStdout(units, format, opts.pretty, typesToGenerate.length > 1);
     }
   }
 }
@@ -251,6 +356,15 @@ export function registerGenerateCommand(program: Command): void {
     .option(
       "--faults <types>",
       `comma-separated fault types to inject. Valid: ${FAULT_TYPES.join(", ")}`,
+    )
+    .option(
+      "--overrides <json>",
+      "JSON object to deep-merge into every generated resource (also readable from stdin)",
+    )
+    .option(
+      "--annotate",
+      "wrap each resource with a notes array explaining its fields in plain language",
+      false,
     )
     .action(runGenerate);
 }

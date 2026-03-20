@@ -2,7 +2,7 @@
 layout: home
 hero:
   name: fhir-test-data
-  tagline: Generate valid FHIR R4/R4B/R5 test resources with country-aware identifiers.
+  tagline: Generate valid FHIR R4/R4B/R5 test resources with country-aware identifiers — pipe-friendly, AI-friendly, and ready for any test workflow.
   actions:
     - theme: brand
       text: Get started
@@ -11,8 +11,12 @@ hero:
       text: View on GitHub
       link: https://github.com/dnlbox/fhir-test-data
 features:
+  - title: CLI-first, pipe-friendly
+    details: Output goes to stdout by default — pipe into jq, validators, FHIR servers, or AI assistants. NDJSON support for streaming bulk workloads. Works wherever JSON does.
   - title: 14 locales, check-digit correct
-    details: Every generated identifier passes its country's official check-digit algorithm — Modulus 11 for UK NHS, Verhoeff for Indian Aadhaar, 11-proef for Dutch BSN, Luhn for Australian IHI, and more.
+    details: Every generated identifier passes its country's official check-digit algorithm — Modulus 11 for UK NHS, Verhoeff for Indian Aadhaar, 11-proef for Dutch BSN, Luhn for AU IHI and ZA ID, and more.
+  - title: Clinically meaningful codes
+    details: Observations use real LOINC codes with values in plausible clinical ranges and HL7-consistent units. Conditions use SNOMED CT codes. Data that makes sense to a clinician, not just a schema validator.
   - title: Seeded and deterministic
     details: The same seed always produces the same output, on any machine, across any Node version. Reliable for snapshot tests, golden file comparison, and regression fixtures.
   - title: Multi-version FHIR support
@@ -32,8 +36,8 @@ Observation, Condition, AllergyIntolerance, MedicationStatement, and Bundle reso
 # Install
 pnpm add fhir-test-data
 
-# Generate 5 UK patients
-fhir-test-data generate patient --locale uk --count 5 --seed 42
+# Pipe into jq
+fhir-test-data generate patient --locale uk --seed 42 | jq '.identifier[0]'
 
 # Generate a full bundle with wired references
 fhir-test-data generate bundle --locale au --seed 1 --output ./fixtures/
