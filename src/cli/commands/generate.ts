@@ -261,6 +261,18 @@ async function runGenerate(resourceType: string, opts: GenerateOptions): Promise
   const locale = opts.locale as Locale;
   const fhirVersion = opts.fhirVersion as FhirVersion;
   const count = Number.parseInt(opts.count, 10);
+
+  // Validate --count: must be a positive integer (≥ 1).
+  const countRaw = opts.count;
+  if (!Number.isInteger(count) || count < 1) {
+    // Quote the raw value when it is not a recognisable number (e.g. "abc"); leave numeric
+    // values (including negatives like -1 and zero) unquoted so the message matches spec.
+    const isNumericLiteral = /^-?\d+$/.test(countRaw);
+    const display = isNumericLiteral ? countRaw : `"${countRaw}"`;
+    process.stderr.write(`Error: --count must be a positive integer, got ${display}\n`);
+    process.exit(1);
+  }
+
   const seed =
     opts.seed !== undefined
       ? Number.parseInt(opts.seed, 10)
@@ -323,6 +335,15 @@ async function runGenerate(resourceType: string, opts: GenerateOptions): Promise
         }))
       : resources;
 
+    // Emit a TTY hint when --annotate is used and stdout is interactive (not piped).
+    // The hint goes to stderr only — it must never appear in piped output.
+    if (opts.annotate && process.stdout.isTTY) {
+      process.stderr.write(
+        "Note: --annotate wraps each resource. To validate, pipe through jq '.resource' first.\n" +
+        "  fhir-test-data generate patient --annotate | jq '.resource' | fhir-resource-diff validate -\n",
+      );
+    }
+
     if (opts.output !== undefined) {
       try {
         writeToOutput(units, type, opts.output, format, opts.annotate);
@@ -363,7 +384,9 @@ export function registerGenerateCommand(program: Command): void {
     )
     .option(
       "--annotate",
-      "wrap each resource with a notes array explaining its fields in plain language",
+      "wrap each resource in { resource, notes } — notes explain each field in plain language. " +
+      "Piping to fhir-resource-diff validate requires extracting .resource first: " +
+      "| jq '.resource' | fhir-resource-diff validate -",
       false,
     )
     .action(runGenerate);
