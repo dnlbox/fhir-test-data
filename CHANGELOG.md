@@ -21,6 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The `--annotate` help text now documents the `{ resource, notes }` wrapper shape and the
   required `jq` workaround for pipeline use.
 
+## [0.1.1] - 2026-03-21
+
+### Fixed
+
+- **CLI version flag** — the version string passed to Commander was hardcoded as `"0.1.0"`.
+  It now uses `createRequire(import.meta.url)` to load the `version` field from `package.json`
+  at runtime, so `-V` always reflects the published package version.
+
 ## [0.1.0] - 2026-03-19
 
 ### Added
@@ -75,5 +83,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Browser-safe core** — `src/core/` has no Node.js API imports and runs in browsers,
   Deno, and Cloudflare Workers without configuration.
 
-[Unreleased]: https://github.com/dnlbox/fhir-test-data/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/dnlbox/fhir-test-data/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/dnlbox/fhir-test-data/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/dnlbox/fhir-test-data/releases/tag/v0.1.0
