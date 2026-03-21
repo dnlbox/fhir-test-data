@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`--count` validation (spec 29)** — `generate --count 0`, `--count -1`, and `--count abc`
+  now exit with code 1 and a clear error message to stderr instead of silently outputting an
+  empty array. Numeric values are displayed unquoted; non-numeric strings are quoted.
+  Example: `Error: --count must be a positive integer, got 0`
+
+- **`--annotate` pipeline hint (spec 30)** — When `--annotate` is used and stdout is a TTY
+  (interactive terminal), a hint is printed to stderr explaining that piping to
+  `fhir-resource-diff validate` requires extracting `.resource` first via `jq '.resource'`.
+  The hint is suppressed when stdout is piped — it never appears in pipe output.
+  The `--annotate` help text now documents the `{ resource, notes }` wrapper shape and the
+  required `jq` workaround for pipeline use.
+
 ## [0.1.0] - 2026-03-19
 
 ### Added

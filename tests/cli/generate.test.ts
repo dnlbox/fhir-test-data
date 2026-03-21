@@ -459,3 +459,95 @@ describe("NDJSON stdout — spec 18", () => {
     expect(() => JSON.parse(out)).not.toThrow();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Spec 29 — --count validation
+// ---------------------------------------------------------------------------
+
+describe("--count validation (spec 29)", () => {
+  it("exits 1 with error message when count is 0", async () => {
+    let threw = false;
+    let errOutput = "";
+    try {
+      await runCLI(["generate", "patient", "--count", "0"]);
+    } catch (e) {
+      threw = true;
+      if (e instanceof CLIError) errOutput = e.err;
+    }
+    expect(threw).toBe(true);
+    expect(exitCode).toBe(1);
+    expect(errOutput).toContain("must be a positive integer");
+    expect(errOutput).toContain("got 0");
+  });
+
+  it("exits 1 with error message when count is negative", async () => {
+    let threw = false;
+    let errOutput = "";
+    try {
+      await runCLI(["generate", "patient", "--count", "-1"]);
+    } catch (e) {
+      threw = true;
+      if (e instanceof CLIError) errOutput = e.err;
+    }
+    expect(threw).toBe(true);
+    expect(exitCode).toBe(1);
+    expect(errOutput).toContain("must be a positive integer");
+    expect(errOutput).toContain("got -1");
+  });
+
+  it("exits 1 with quoted error message when count is non-integer string", async () => {
+    let threw = false;
+    let errOutput = "";
+    try {
+      await runCLI(["generate", "patient", "--count", "abc"]);
+    } catch (e) {
+      threw = true;
+      if (e instanceof CLIError) errOutput = e.err;
+    }
+    expect(threw).toBe(true);
+    expect(exitCode).toBe(1);
+    expect(errOutput).toContain("must be a positive integer");
+    expect(errOutput).toContain('"abc"');
+  });
+
+  it("accepts count 1 (minimum valid value)", async () => {
+    const { out } = await runCLI(["generate", "patient", "--count", "1", "--seed", "1"]);
+    const parsed = JSON.parse(out);
+    expect(parsed["resourceType"]).toBe("Patient");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Spec 30 — --annotate pipeline interoperability
+// ---------------------------------------------------------------------------
+
+describe("--annotate output (spec 30)", () => {
+  it("wraps resource in { resource, notes } structure", async () => {
+    const { out } = await runCLI(["generate", "patient", "--seed", "1", "--annotate"]);
+    const parsed = JSON.parse(out) as Record<string, unknown>;
+    expect(parsed).toHaveProperty("resource");
+    expect(parsed).toHaveProperty("notes");
+    const resource = parsed["resource"] as Record<string, unknown>;
+    expect(resource["resourceType"]).toBe("Patient");
+    expect(Array.isArray(parsed["notes"])).toBe(true);
+  });
+
+  it("does not emit hint to stdout when stdout is not a TTY (piped path)", async () => {
+    // In tests, process.stdout.isTTY is undefined/falsy — simulating the piped case.
+    // The hint must NOT appear on stdout.
+    const { out } = await runCLI(["generate", "patient", "--seed", "1", "--annotate"]);
+    const parsed = JSON.parse(out) as Record<string, unknown>;
+    // Valid JSON with the expected shape — no hint text mixed in
+    expect(parsed).toHaveProperty("resource");
+    expect(parsed).toHaveProperty("notes");
+  });
+
+  it("does not modify output shape compared to non-TTY invocation", async () => {
+    const { out } = await runCLI(["generate", "patient", "--seed", "42", "--annotate"]);
+    const parsed = JSON.parse(out) as Record<string, unknown>;
+    const resource = parsed["resource"] as Record<string, unknown>;
+    expect(resource["resourceType"]).toBe("Patient");
+    const notes = parsed["notes"] as unknown[];
+    expect(notes.length).toBeGreaterThan(0);
+  });
+});

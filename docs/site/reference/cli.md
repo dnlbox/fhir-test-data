@@ -44,9 +44,18 @@ Valid values: `us` `uk` `au` `ca` `de` `fr` `nl` `in` `jp` `kr` `sg` `br` `mx` `
 **Default:** `1`
 
 Number of resources to generate. Each resource gets its own UUID and seed-derived values.
+Must be a positive integer (≥ 1). Passing `0`, a negative number, or a non-integer exits
+with code 1 and a message to stderr.
 
 ```bash
 fhir-test-data generate patient --locale us --count 100
+```
+
+```bash
+# Error cases — exit 1
+fhir-test-data generate patient --count 0    # Error: --count must be a positive integer, got 0
+fhir-test-data generate patient --count -5   # Error: --count must be a positive integer, got -5
+fhir-test-data generate patient --count abc  # Error: --count must be a positive integer, got "abc"
 ```
 
 ---
@@ -131,6 +140,34 @@ fhir-test-data generate patient --locale uk --no-pretty
 # Pretty-print to files
 fhir-test-data generate patient --locale uk --output ./fixtures/ --pretty
 ```
+
+---
+
+### `--annotate`
+
+**Default:** off
+
+Wraps each generated resource in `{ resource, notes }` where `notes` is an array of
+plain-language explanations for each field.
+
+```bash
+fhir-test-data generate patient --seed 1 --annotate
+# stdout: { "resource": { "resourceType": "Patient", ... }, "notes": [...] }
+```
+
+::: warning Piping annotated output to validate
+`--annotate` output is **not** a raw FHIR resource. Piping directly to
+`fhir-resource-diff validate` will fail with "Missing or invalid resourceType" because the
+validator receives the wrapper object, not the inner resource.
+
+Extract `.resource` first using `jq`:
+
+```bash
+fhir-test-data generate patient --annotate | jq '.resource' | fhir-resource-diff validate -
+```
+
+When stdout is a TTY, the CLI prints this hint to stderr automatically.
+:::
 
 ---
 

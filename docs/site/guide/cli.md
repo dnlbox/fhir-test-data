@@ -35,13 +35,14 @@ fhir-test-data generate <resource-type> [options]
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--locale <code>` | `us` | Locale code — see [Locales](/guide/locales) |
-| `--count <n>` | `1` | Number of resources to generate |
+| `--count <n>` | `1` | Number of resources to generate (must be ≥ 1; exits 1 if 0, negative, or non-integer) |
 | `--seed <n>` | `0` | Seed for deterministic output |
 | `--fhir-version <v>` | `R4` | FHIR version: `R4` \| `R4B` \| `R5` |
 | `--output <dir>` | stdout | Write one file per resource to this directory |
 | `--format <fmt>` | `json` | Output format: `json` \| `ndjson` |
 | `--pretty` | `true` for stdout | Pretty-print JSON |
 | `--no-pretty` | — | Compact JSON |
+| `--annotate` | off | Wrap each resource in `{ resource, notes }` with plain-language field explanations |
 
 ## Examples
 
@@ -110,6 +111,36 @@ fhir-test-data generate practitioner --locale de --fhir-version R4B
 fhir-test-data generate patient --locale uk --seed 42 > a.json
 fhir-test-data generate patient --locale uk --seed 42 > b.json
 diff a.json b.json  # empty — identical output
+```
+
+### Annotated output
+
+Use `--annotate` to wrap each resource in a `{ resource, notes }` envelope. The `notes`
+array contains plain-language explanations for each field — useful for onboarding or
+generating human-readable test fixtures.
+
+```bash
+fhir-test-data generate patient --seed 1 --annotate
+```
+
+> **Piping to validate**: annotated output is not a raw FHIR resource. Extract `.resource`
+> first with `jq` before passing to `fhir-resource-diff validate`:
+>
+> ```bash
+> fhir-test-data generate patient --annotate | jq '.resource' | fhir-resource-diff validate -
+> ```
+>
+> When running interactively (TTY), the CLI prints this hint to stderr automatically.
+
+### Count validation
+
+`--count` must be a positive integer (≥ 1). Passing `0`, a negative value, or a non-integer
+exits with code 1:
+
+```bash
+fhir-test-data generate patient --count 0    # Error: --count must be a positive integer, got 0
+fhir-test-data generate patient --count -1   # Error: --count must be a positive integer, got -1
+fhir-test-data generate patient --count abc  # Error: --count must be a positive integer, got "abc"
 ```
 
 ## CI usage
