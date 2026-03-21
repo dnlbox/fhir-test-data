@@ -1,15 +1,19 @@
 #!/usr/bin/env node
+import { createRequire } from "module";
 import { Command } from "commander";
 import { registerGenerateCommand } from "./commands/generate.js";
 import { registerLocalesCommand } from "./commands/locales.js";
 import { registerDescribeCommand } from "./commands/describe.js";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../../package.json") as { version: string };
 
 const program = new Command();
 
 program
   .name("fhir-test-data")
   .description("Generate valid FHIR R4 test resources with country-aware identifiers")
-  .version("0.1.0");
+  .version(version, "-V", "Print version number");
 
 registerGenerateCommand(program);
 registerLocalesCommand(program);

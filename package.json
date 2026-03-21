@@ -1,6 +1,6 @@
 {
   "name": "fhir-test-data",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TypeScript library and CLI for generating valid FHIR R4/R4B/R5 test resources with country-aware identifiers",
   "author": "Daniel Veronez",
   "license": "MIT",
