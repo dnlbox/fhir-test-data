@@ -1,19 +1,18 @@
 #!/usr/bin/env node
-import { createRequire } from "node:module";
 import { Command } from "commander";
 import { registerGenerateCommand } from "./commands/generate.js";
 import { registerLocalesCommand } from "./commands/locales.js";
 import { registerDescribeCommand } from "./commands/describe.js";
 
-const require = createRequire(import.meta.url);
-const { version } = require("../../package.json") as { version: string };
+// Injected at build time by tsup — see tsup.config.ts
+declare const __PACKAGE_VERSION__: string;
 
 const program = new Command();
 
 program
   .name("fhir-test-data")
   .description("Generate valid FHIR R4 test resources with country-aware identifiers")
-  .version(version, "-V", "Print version number");
+  .version(__PACKAGE_VERSION__, "-V", "Print version number");
 
 registerGenerateCommand(program);
 registerLocalesCommand(program);
