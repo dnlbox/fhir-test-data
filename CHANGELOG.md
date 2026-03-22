@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Deno compatibility** — `import { createRequire } from "module"` is now
-  `import { createRequire } from "node:module"`. Deno requires the `node:` prefix
-  for Node.js built-in modules. Node.js 18+ also accepts the prefix, so this is
-  fully backwards-compatible.
+- **Deno compatibility** — tsup/esbuild silently strips the `node:` prefix from
+  built-in imports in the bundle output, so `import { createRequire } from "node:module"`
+  became `import { createRequire } from "module"` in the dist files, which Deno rejects.
+  The real fix eliminates the `createRequire` import entirely: the package version is now
+  read from `package.json` at build time in `tsup.config.ts` and injected as
+  `__PACKAGE_VERSION__` via esbuild's `define` option. The version becomes a plain inlined
+  string in the bundle with no runtime Node.js built-in import.
 
 ## [0.1.1] - 2026-03-21
 
