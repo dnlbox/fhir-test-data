@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createRequire } from "module";
+import { createRequire } from "node:module";
 import { Command } from "commander";
 import { registerGenerateCommand } from "./commands/generate.js";
 import { registerLocalesCommand } from "./commands/locales.js";
