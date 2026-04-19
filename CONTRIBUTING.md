@@ -77,20 +77,15 @@ cover every field in the FHIR spec, will not be accepted.
 
 ---
 
-## Spec-driven development
+## Proposing significant changes
 
-Significant features start as a spec file in `docs/specs/` before any code is written.
-Specs define the goal, interface design, acceptance criteria, and explicit out-of-scope
-items. This lets us align on direction before effort is invested.
+Before adding a new locale, a new resource type, or changing a shared builder option,
+open a GitHub issue first. Describe the goal, the interface you have in mind, and
+what's explicitly out of scope. Fifteen minutes of alignment saves hours of rework
+if the direction doesn't fit.
 
-**To find open specs:**
-```bash
-grep -rL "Status.*complete" docs/specs/*.md
-```
-
-**Before building a significant feature:** open a GitHub issue with a draft spec. See
-[`docs/specs/ORCHESTRATOR.md`](docs/specs/ORCHESTRATOR.md) for the spec format and
-current build order.
+Bug fixes, test additions, and small self-contained improvements don't need this
+step — open a PR directly.
 
 ---
 
@@ -158,7 +153,7 @@ spawning. Pass data directly to functions.
 
 ## Code style
 
-See [`AGENTS.md`](AGENTS.md) for the full conventions. The key patterns:
+The key patterns to match the existing codebase:
 
 **Immutable builders.** Each builder method returns a new instance. Callers should never
 need to clone a builder to safely fork a chain.
