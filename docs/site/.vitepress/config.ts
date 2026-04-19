@@ -1,10 +1,48 @@
 import { defineConfig } from "vitepress";
 
+const HOSTNAME = "https://dnlbox.github.io/fhir-test-data";
+const DESCRIPTION =
+  "FHIR R4/R4B/R5 test data generator. Country-aware identifiers: NHS, Medicare, BSN, Aadhaar. Seeded, deterministic. TypeScript CLI and library.";
+
 export default defineConfig({
   title: "fhir-test-data",
-  description:
-    "Generate valid FHIR R4/R4B/R5 test resources with country-aware identifiers. TypeScript library and CLI.",
+  description: DESCRIPTION,
   base: "/fhir-test-data/",
+  sitemap: { hostname: HOSTNAME + "/" },
+  head: [
+    ["meta", { property: "og:type", content: "website" }],
+    ["meta", { property: "og:site_name", content: "fhir-test-data" }],
+    ["meta", { property: "og:title", content: "fhir-test-data — FHIR R4/R4B/R5 test data generator CLI" }],
+    ["meta", { property: "og:description", content: DESCRIPTION }],
+    ["meta", { property: "og:url", content: HOSTNAME + "/" }],
+    ["meta", { name: "twitter:card", content: "summary" }],
+    ["meta", { name: "twitter:title", content: "fhir-test-data — FHIR R4/R4B/R5 test data generator CLI" }],
+    ["meta", { name: "twitter:description", content: DESCRIPTION }],
+    [
+      "script",
+      { type: "application/ld+json" },
+      JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        name: "fhir-test-data",
+        description: DESCRIPTION,
+        applicationCategory: "DeveloperApplication",
+        operatingSystem: "Any",
+        programmingLanguage: "TypeScript",
+        url: HOSTNAME + "/",
+        downloadUrl: "https://www.npmjs.com/package/fhir-test-data",
+        license: "https://opensource.org/licenses/MIT",
+        codeRepository: "https://github.com/dnlbox/fhir-test-data",
+        author: { "@type": "Person", name: "Daniel Veronez" },
+      }),
+    ],
+  ],
+  transformHead({ pageData }) {
+    const slug = pageData.relativePath
+      .replace(/index\.md$/, "")
+      .replace(/\.md$/, ".html");
+    return [["link", { rel: "canonical", href: `${HOSTNAME}/${slug}` }]];
+  },
   themeConfig: {
     nav: [
       { text: "Guide", link: "/guide/getting-started", activeMatch: "/guide/" },
