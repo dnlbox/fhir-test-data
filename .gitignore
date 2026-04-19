@@ -34,3 +34,12 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .claude/
+
+# Internal maintainer notes (not published)
+AGENTS.md
+docs/PROJECT.md
+docs/specs/
+docs/research/
+
+# Local archive (historical specs, research)
+.archive/
