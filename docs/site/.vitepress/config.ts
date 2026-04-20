@@ -8,6 +8,7 @@ export default defineConfig({
   title: "fhir-test-data",
   description: DESCRIPTION,
   base: "/fhir-test-data/",
+  appearance: 'dark',
   sitemap: { hostname: HOSTNAME + "/" },
   head: [
     ["meta", { property: "og:type", content: "website" }],

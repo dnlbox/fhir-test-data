@@ -2,7 +2,8 @@
 layout: home
 hero:
   name: fhir-test-data
-  tagline: Generate valid FHIR R4/R4B/R5 test resources with country-aware identifiers — pipe-friendly, AI-friendly, and ready for any test workflow.
+  text: Valid FHIR test resources, on demand.
+  tagline: Country-aware identifiers, deterministic seeds, 14 locales. Built for CI pipelines and AI agents.
   actions:
     - theme: brand
       text: Get started
@@ -52,3 +53,15 @@ const [patient] = createPatientBuilder().locale("nl").seed(99).build();
 // Full bundle with automatic reference wiring
 const [bundle] = createBundleBuilder().locale("us").seed(42).type("transaction").build();
 ```
+
+## Part of the FHIR operations toolkit
+
+Three focused CLI tools built for FHIR development workflows. Each does one job well — compose them in shell pipelines, CI steps, or AI agent chains instead of reaching for a single monolithic toolkit.
+
+| Tool | Purpose |
+|------|---------|
+| [fhir-resource-diff](https://dnlbox.github.io/fhir-resource-diff) | Diff, validate, and inspect FHIR resources |
+| [fhir-capability-analyzer](https://dnlbox.github.io/fhir-capability-analyzer) | Analyze and compare FHIR server CapabilityStatements |
+| **fhir-test-data** *(this)* | Generate valid FHIR test resources across 14 locales |
+
+The tools are independent — use one, two, or all three in any combination that fits your pipeline.
