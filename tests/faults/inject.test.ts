@@ -179,6 +179,48 @@ describe("injectFaults — invalid-telecom-system", () => {
   });
 });
 
+describe("injectFaults — missing-status", () => {
+  it("removes the status field", () => {
+    const enc: FhirResource = { resourceType: "Encounter", id: "enc-1", status: "finished", class: {} };
+    const result = injectFaults(enc, ["missing-status"], fixedRng);
+    expect(result).not.toHaveProperty("status");
+  });
+
+  it("preserves all other fields", () => {
+    const enc: FhirResource = { resourceType: "Encounter", id: "enc-1", status: "finished", class: {} };
+    const result = injectFaults(enc, ["missing-status"], fixedRng);
+    expect(result).toHaveProperty("id", "enc-1");
+    expect(result).toHaveProperty("class");
+  });
+
+  it("is a no-op when status field is absent", () => {
+    const resource: FhirResource = { resourceType: "Bundle", id: "b1", type: "collection" };
+    const result = injectFaults(resource, ["missing-status"], fixedRng);
+    expect(result).not.toHaveProperty("status");
+    expect(result).toHaveProperty("type", "collection");
+  });
+});
+
+describe("injectFaults — invalid-status-value", () => {
+  it("sets status to not-a-valid-status", () => {
+    const enc: FhirResource = { resourceType: "Encounter", id: "enc-2", status: "finished", class: {} };
+    const result = injectFaults(enc, ["invalid-status-value"], fixedRng);
+    expect(result["status"]).toBe("not-a-valid-status");
+  });
+
+  it("works on DiagnosticReport", () => {
+    const rpt: FhirResource = { resourceType: "DiagnosticReport", id: "dr-1", status: "final", code: {} };
+    const result = injectFaults(rpt, ["invalid-status-value"], fixedRng);
+    expect(result["status"]).toBe("not-a-valid-status");
+  });
+
+  it("is a no-op when status field is absent", () => {
+    const resource: FhirResource = { resourceType: "Organization", id: "org-1" };
+    const result = injectFaults(resource, ["invalid-status-value"], fixedRng);
+    expect(result).not.toHaveProperty("status");
+  });
+});
+
 // ---------------------------------------------------------------------------
 // "random" expansion
 // ---------------------------------------------------------------------------
@@ -263,8 +305,8 @@ describe("FAULT_TYPES", () => {
     }
   });
 
-  it("has 10 entries (9 concrete + random)", () => {
-    expect(CONCRETE_FAULT_TYPES).toHaveLength(9);
-    expect(FAULT_TYPES).toHaveLength(10);
+  it("has 12 entries (11 concrete + random)", () => {
+    expect(CONCRETE_FAULT_TYPES).toHaveLength(11);
+    expect(FAULT_TYPES).toHaveLength(12);
   });
 });
