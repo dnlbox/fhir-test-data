@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-04-24
+
+### Added
+
+- **Encounter builder** (`createEncounterBuilder`) — generates HL7 FHIR R4/R4B/R5 Encounter resources with status, class (HL7 v3 ActCode), and type (SNOMED CT). Status and period fields are consistent: planned encounters have no period, open encounters have start only, closed encounters have start and end. R5 adapter converts `class` from Coding to CodeableConcept array per spec.
+- **DiagnosticReport builder** (`createDiagnosticReportBuilder`) — generates HL7 FHIR R4/R4B/R5 DiagnosticReport resources with status, LOINC report code, and HL7 v2-0074 category. Category is matched to the selected report code for consistency.
+- **`missing-status` fault** — removes the `status` field from any clinical resource. Triggers a required-field warning in `fhir-resource-diff validate`.
+- **`invalid-status-value` fault** — sets `status` to a value not in any FHIR ValueSet. Triggers a status-value warning in `fhir-resource-diff validate`.
+- CLI `generate` command now accepts `encounter` and `diagnostic-report` as resource type arguments.
+- `llms.txt` created with full library API, locale table, fault types, and cross-references to `fhir-resource-diff` and `fhir-capability-analyzer`.
+
+### Changed
+
+- README: added "What is FHIR?" section, Encounter and DiagnosticReport in the feature description, ecosystem table with all three sister tools, pipeline integration examples, and Development section.
+
 ## [0.1.2] - 2026-03-21
 
 ### Fixed

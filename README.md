@@ -7,6 +7,10 @@
 
 Generate valid FHIR R4 / R4B / R5 test resources with country-aware identifiers — from the CLI, a TypeScript library, or any tool that reads from a pipe.
 
+## What is FHIR?
+
+FHIR (Fast Healthcare Interoperability Resources) is the modern standard for exchanging healthcare data, published by HL7. This tool generates FHIR JSON resources — the building blocks of healthcare APIs. [Learn more at hl7.org/fhir](https://hl7.org/fhir/)
+
 ---
 
 ## Why this exists
@@ -14,6 +18,8 @@ Generate valid FHIR R4 / R4B / R5 test resources with country-aware identifiers 
 FHIR development requires realistic test data, but building it by hand is tedious and error-prone. Most teams either copy production data (a compliance risk) or write custom generators that hardcode US-centric identifiers — useless if your system needs to handle UK NHS numbers, Dutch BSNs, Korean RRNs, or Brazilian CPFs.
 
 **fhir-test-data** generates structurally valid FHIR resources across 14 locales, with identifiers that pass each country's official check-digit algorithm. Clinical resources use real LOINC codes with values in realistic clinical ranges and HL7-consistent units of measurement, and SNOMED CT codes for conditions — so the data makes sense medically, not just structurally. All output is seeded and deterministic — the same seed always produces the same data, anywhere it runs.
+
+Supported resource types: `Patient`, `Practitioner`, `PractitionerRole`, `Organization`, `Observation`, `Condition`, `AllergyIntolerance`, `MedicationStatement`, `Encounter`, `DiagnosticReport`, and `Bundle`.
 
 ---
 
@@ -164,7 +170,7 @@ const [bundle] = createBundleBuilder()
   .build();
 ```
 
-Each bundle includes: Patient, Organization, Practitioner, PractitionerRole, and N clinical resources (Observations, Conditions, AllergyIntolerance, MedicationStatement). All internal references are consistent — `Observation.subject` → Patient, `Observation.performer[0]` → Practitioner, `Patient.managingOrganization` → Organization.
+Each bundle includes: Patient, Organization, Practitioner, PractitionerRole, and N clinical resources (Observations, Conditions, AllergyIntolerance, MedicationStatement). All internal references are consistent: `Observation.subject` points to the Patient, `Observation.performer[0]` to the Practitioner, and `Patient.managingOrganization` to the Organization.
 
 ---
 
@@ -204,19 +210,59 @@ Use **fhir-test-data** when you need TypeScript-native, internationally correct,
 
 ---
 
-## Related resources
+## The FHIR TypeScript ecosystem
 
-**[fhir-resource-diff](https://github.com/dnlbox/fhir-resource-diff)** — compare FHIR resources structurally, ignoring irrelevant differences like IDs and timestamps. A natural companion for validating that generated fixtures stay stable across library upgrades:
+`fhir-test-data` is part of a small family of tools for FHIR developer workflows:
+
+| Tool | Purpose |
+|---|---|
+| `fhir-test-data` (this package) | Generate valid FHIR fixtures across 14 locales |
+| [`fhir-resource-diff`](https://github.com/dnlbox/fhir-resource-diff) | Validate, diff, and compare individual FHIR JSON resources |
+| [`fhir-capability-analyzer`](https://github.com/dnlbox/fhir-capability-analyzer) | Fetch, analyze, and compare FHIR server CapabilityStatements |
+
+**Using them together:**
 
 ```bash
-# Generate fixtures
-fhir-test-data generate bundle --locale uk --seed 1 --output ./fixtures/
+# Generate a patient fixture and validate it in one step
+fhir-test-data generate patient --locale uk --seed 42 | \
+  fhir-resource-diff validate - --fhir-version R4
 
-# Compare against a committed baseline
-fhir-resource-diff compare ./fixtures/Bundle-001.json ./baseline/Bundle-001.json
+# Create regression fixtures, commit them, then check for drift in CI
+fhir-test-data generate bundle --locale us --seed 1 --output ./fixtures/
+fhir-resource-diff compare ./fixtures/Bundle-001.json ./baseline/Bundle-001.json \
+  --preset metadata --exit-on-diff
+
+# Generate fixtures, validate them, then check what the server supports
+fhir-test-data generate patient --locale au --seed 1 | \
+  fhir-resource-diff validate - --fhir-version R4
+fhir-capability-analyzer analyze https://your-fhir-server.example.com
 ```
 
----
+## Development
+
+### Prerequisites
+
+- Node.js >= 20
+- pnpm >= 9
+
+### Setup
+
+```bash
+git clone https://github.com/dnlbox/fhir-test-data.git
+cd fhir-test-data
+pnpm install
+```
+
+### Common scripts
+
+| Script | Purpose |
+|--------|---------|
+| `pnpm cli -- generate patient --seed 1` | Run CLI from source |
+| `pnpm test` | Run tests |
+| `pnpm test:watch` | Run tests in watch mode |
+| `pnpm typecheck` | TypeScript type checking |
+| `pnpm lint` | ESLint |
+| `pnpm build` | Production build (tsup) |
 
 ## Documentation
 

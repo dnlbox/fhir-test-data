@@ -91,6 +91,17 @@ const invalidTelecomSystem: FaultStrategy = (r) => {
   };
 };
 
+const missingStatus: FaultStrategy = (r) => {
+  if (!("status" in r)) return r;
+  const { status: _dropped, ...rest } = r;
+  return rest;
+};
+
+const invalidStatusValue: FaultStrategy = (r) => {
+  if (!("status" in r)) return r;
+  return { ...r, status: "not-a-valid-status" };
+};
+
 // ---------------------------------------------------------------------------
 // Registry
 // ---------------------------------------------------------------------------
@@ -105,6 +116,8 @@ export const FAULT_REGISTRY: Record<ConcreteFaultType, FaultStrategy> = {
   "wrong-type-on-field":    wrongTypeOnField,
   "duplicate-identifier":   duplicateIdentifier,
   "invalid-telecom-system": invalidTelecomSystem,
+  "missing-status":         missingStatus,
+  "invalid-status-value":   invalidStatusValue,
 };
 
 export const CONCRETE_FAULT_TYPES = Object.keys(

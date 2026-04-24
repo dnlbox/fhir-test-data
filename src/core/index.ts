@@ -7,4 +7,6 @@ export * from "./builders/observation.js";
 export * from "./builders/condition.js";
 export * from "./builders/allergy-intolerance.js";
 export * from "./builders/medication-statement.js";
+export * from "./builders/encounter.js";
+export * from "./builders/diagnostic-report.js";
 export * from "./builders/bundle.js";

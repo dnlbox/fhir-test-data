@@ -13,6 +13,8 @@ export const SUPPORTED_RESOURCE_TYPES = [
   "Condition",
   "AllergyIntolerance",
   "MedicationStatement",
+  "Encounter",
+  "DiagnosticReport",
   "Bundle",
 ] as const;
 

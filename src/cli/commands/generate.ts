@@ -9,6 +9,8 @@ import { createConditionBuilder } from "@/core/builders/condition.js";
 import { createAllergyIntoleranceBuilder } from "@/core/builders/allergy-intolerance.js";
 import { createMedicationStatementBuilder } from "@/core/builders/medication-statement.js";
 import { createPractitionerRoleBuilder } from "@/core/builders/practitioner-role.js";
+import { createEncounterBuilder } from "@/core/builders/encounter.js";
+import { createDiagnosticReportBuilder } from "@/core/builders/diagnostic-report.js";
 import { createBundleBuilder } from "@/core/builders/bundle.js";
 import { deepMerge } from "@/core/builders/utils.js";
 import { SUPPORTED_LOCALES, SUPPORTED_FHIR_VERSIONS } from "@/core/types.js";
@@ -32,6 +34,8 @@ type ResourceType =
   | "condition"
   | "allergy-intolerance"
   | "medication-statement"
+  | "encounter"
+  | "diagnostic-report"
   | "bundle"
   | "all";
 
@@ -47,9 +51,11 @@ const BUILDER_FACTORIES: Record<
   organization:          (l, c, s, v) => createOrganizationBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
   observation:           (l, c, s, v) => createObservationBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
   condition:             (l, c, s, v) => createConditionBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
-  "allergy-intolerance": (l, c, s, v) => createAllergyIntoleranceBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
-  "medication-statement":(l, c, s, v) => createMedicationStatementBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
-  bundle:                (l, c, s, v) => createBundleBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  "allergy-intolerance":  (l, c, s, v) => createAllergyIntoleranceBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  "medication-statement": (l, c, s, v) => createMedicationStatementBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  encounter:              (l, c, s, v) => createEncounterBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  "diagnostic-report":    (l, c, s, v) => createDiagnosticReportBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
+  bundle:                 (l, c, s, v) => createBundleBuilder().locale(l).count(c).seed(s).fhirVersion(v).build(),
 };
 
 const CONCRETE_RESOURCE_TYPES = Object.keys(BUILDER_FACTORIES) as ConcreteResourceType[];

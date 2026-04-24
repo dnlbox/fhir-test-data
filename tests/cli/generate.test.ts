@@ -145,6 +145,22 @@ describe("generate to stdout", () => {
     expect(Array.isArray(parsed["entry"])).toBe(true);
   });
 
+  it("generates an encounter", async () => {
+    const { out } = await runCLI(["generate", "encounter", "--seed", "15"]);
+    const parsed = JSON.parse(out);
+    expect(parsed["resourceType"]).toBe("Encounter");
+    expect(typeof parsed["status"]).toBe("string");
+    expect(typeof parsed["class"]).toBe("object");
+  });
+
+  it("generates a diagnostic-report", async () => {
+    const { out } = await runCLI(["generate", "diagnostic-report", "--seed", "16"]);
+    const parsed = JSON.parse(out);
+    expect(parsed["resourceType"]).toBe("DiagnosticReport");
+    expect(typeof parsed["status"]).toBe("string");
+    expect(typeof parsed["code"]).toBe("object");
+  });
+
   it("generates one of each resource with 'all'", async () => {
     const cap = createCapture();
     const program = new Command();
@@ -157,7 +173,7 @@ describe("generate to stdout", () => {
     }
     const lines = cap.out.join("").trim().split("\n").filter(Boolean);
     // Each resource type outputs on its own line when count=1
-    expect(lines.length).toBeGreaterThanOrEqual(9);
+    expect(lines.length).toBeGreaterThanOrEqual(11);
   });
 });
 

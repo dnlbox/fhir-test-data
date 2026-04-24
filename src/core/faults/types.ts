@@ -12,7 +12,9 @@ export type ConcreteFaultType =
   | "empty-name"              // set name to an empty array
   | "wrong-type-on-field"     // set birthDate to an integer instead of a string
   | "duplicate-identifier"    // repeat identifier[0] in the identifier array
-  | "invalid-telecom-system"; // set telecom[0].system to an unrecognised value
+  | "invalid-telecom-system"  // set telecom[0].system to an unrecognised value
+  | "missing-status"          // remove the status field (applies to any clinical resource)
+  | "invalid-status-value";   // set status to a string not in the resource's ValueSet
 
 /**
  * Full fault type including the "random" convenience alias.
@@ -31,6 +33,8 @@ export const FAULT_TYPES: FaultType[] = [
   "wrong-type-on-field",
   "duplicate-identifier",
   "invalid-telecom-system",
+  "missing-status",
+  "invalid-status-value",
   "random",
 ];
 
