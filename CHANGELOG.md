@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Dev: bumped eslint to 10; removed unused zod dependency. No user-facing behaviour change.
+
 ## [0.1.3] - 2026-04-24
 
 ### Added
