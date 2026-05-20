@@ -1,0 +1,179 @@
+---
+title: generate
+description: Generate one or more FHIR resources to stdout or a directory.
+sidebar:
+  order: 2
+---
+
+import CommandOutput from '../../../components/CommandOutput.astro';
+
+## Synopsis
+
+```
+fhir-test-data generate [options] <resource-type>
+```
+
+## Resource types
+
+| Argument | FHIR type |
+|---|---|
+| `patient` | Patient |
+| `practitioner` | Practitioner |
+| `practitioner-role` | PractitionerRole |
+| `organization` | Organization |
+| `observation` | Observation |
+| `condition` | Condition |
+| `allergy-intolerance` | AllergyIntolerance |
+| `medication-statement` | MedicationStatement (R4/R4B) / MedicationUsage (R5) |
+| `encounter` | Encounter |
+| `diagnostic-report` | DiagnosticReport |
+| `bundle` | Bundle (all types composed) |
+| `all` | All of the above, one output unit per type |
+
+## Options
+
+**Actual `--help` output (v0.1.3):**
+
+```
+Usage: fhir-test-data generate [options] <resource-type>
+
+Options:
+  --locale <code>           locale for identifiers and addresses (default: "us")
+  --count <n>               number of resources to generate (default: "1")
+  --seed <n>                seed for deterministic output
+  --fhir-version <version>  FHIR version to target: R4 | R4B | R5 (default: "R4")
+  --output <dir>            output directory (one file per resource)
+  --format <fmt>            output format: json | ndjson (default: "json")
+  --pretty                  pretty-print JSON (default for stdout) (default: true)
+  --no-pretty               compact JSON output
+  --faults <types>          comma-separated fault types to inject. Valid:
+                            missing-resource-type, invalid-resource-type,
+                            missing-id, invalid-gender, malformed-date,
+                            empty-name, wrong-type-on-field,
+                            duplicate-identifier, invalid-telecom-system,
+                            missing-status, invalid-status-value, random
+  --overrides <json>        JSON object to deep-merge into every generated
+                            resource (also readable from stdin)
+  --annotate                wrap each resource in { resource, notes } — notes
+                            explain each field in plain language. Piping to
+                            fhir-resource-diff validate requires extracting
+                            .resource first: | jq '.resource' |
+                            fhir-resource-diff validate - (default: false)
+  -h, --help                display help for command
+```
+
+## Flag details
+
+### `--locale`
+
+Controls which country's identifier systems, address format, and name pool are used. Default is `us`. See [Locales reference](/locales/overview/) for the full list.
+
+### `--seed`
+
+When supplied, the output is fully deterministic: the same seed on any machine produces identical JSON. Without `--seed`, a random seed is chosen at runtime.
+
+```sh
+# Always produces the same resource
+fhir-test-data generate patient --locale nl --seed 100
+```
+
+### `--fhir-version`
+
+Selects the FHIR version. Default is `R4`. R4B is structurally identical to R4 for all generated resources. R5 applies two structural changes:
+
+- `MedicationStatement` is renamed to `MedicationUsage` and the medication field is restructured from `medicationCodeableConcept` to `medication.concept`.
+- `AllergyIntolerance.type` changes from a plain code string to a `CodeableConcept` with a `coding` array.
+
+### `--format`
+
+- `json` (default): single resource as pretty JSON, or an array when `--count > 1` and writing to stdout.
+- `ndjson`: one JSON line per resource — compact, no pretty-printing for stdout.
+
+### `--output`
+
+Writes one file per resource to `<dir>`. File names are `{ResourceType}-001.json`, `{ResourceType}-002.json`, etc. With `--format ndjson`, all resources are written to a single `{ResourceType}.ndjson` file.
+
+### `--faults`
+
+Injects intentional FHIR violations to test validation pipelines. See [Fault injection](/guides/fault-injection/) for details.
+
+### `--overrides`
+
+Deep-merges a JSON object into every generated resource. Useful for forcing specific field values while keeping generated fields for everything else.
+
+```sh
+fhir-test-data generate patient --locale us \
+  --overrides '{"meta":{"profile":["http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"]}}'
+```
+
+Overrides can also be supplied via stdin (piped JSON). The `--overrides` flag wins on key conflicts.
+
+### `--annotate`
+
+Wraps each resource in `{ resource, notes }` where `notes` is an array of `{ path, note }` objects explaining each generated field.
+
+:::caution
+When piping `--annotate` output to `fhir-resource-diff validate`, extract `.resource` first:
+```sh
+fhir-test-data generate patient --annotate | jq '.resource' | fhir-resource-diff validate -
+```
+:::
+
+## Examples
+
+Generate 10 German Patients and write to files:
+
+```sh
+fhir-test-data generate patient --locale de --count 10 --output ./fixtures/
+```
+
+Generate a US Bundle in R5 as compact JSON:
+
+```sh
+fhir-test-data generate bundle --locale us --fhir-version R5 --no-pretty
+```
+
+Generate 5 Australian Observations as NDJSON:
+
+```sh
+fhir-test-data generate observation --locale au --count 5 --format ndjson
+```
+
+Generate all resource types for locale `in`, deterministic seed:
+
+```sh
+fhir-test-data generate all --locale in --seed 999 --output ./fixtures/
+```
+
+Generate a patient with a fault injected:
+
+<CommandOutput cmd="fhir-test-data generate patient --locale us --seed 1 --faults missing-id">
+{`{
+  "resourceType": "Patient",
+  "identifier": [
+    {
+      "system": "http://hl7.org/fhir/sid/us-ssn",
+      "value": "948-14-4038"
+    }
+  ],
+  "name": [
+    { "use": "official", "family": "Sanchez", "given": ["Mary"] }
+  ],
+  "telecom": [
+    { "system": "phone", "value": "(555) 271-1384", "use": "home" },
+    { "system": "email", "value": "mary.sanchez@example.com", "use": "home" }
+  ],
+  "gender": "female",
+  "birthDate": "1991-06-30",
+  "address": [
+    { "use": "home", "line": ["2811 Clearwater Lane"],
+      "city": "Fresno", "postalCode": "65154",
+      "country": "US", "state": "CA" }
+  ],
+  "communication": [
+    { "language": { "coding": [{ "system": "urn:ietf:bcp:47", "code": "en-US" }] } }
+  ]
+}`}
+</CommandOutput>
+
+Note: the `id` field is absent — that is the `missing-id` fault.
