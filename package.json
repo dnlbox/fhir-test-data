@@ -90,15 +90,9 @@
     "vitepress": "^1.6.4",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@10.32.1",
+  "packageManager": "pnpm@11.1.3",
   "engines": {
     "node": ">=22.0.0",
-    "pnpm": ">=10.0.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lefthook"
-    ]
+    "pnpm": ">=11.0.0"
   }
 }
