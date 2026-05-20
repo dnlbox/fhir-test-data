@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `--version` long flag (alias for `-V`). Matches the `fhir-resource-diff` and `fhir-capability-analyzer` CLIs, which already supported both forms.
+
 ### Changed
 
 - Dev: bumped typescript 5.9→6 (added tsconfig flags for tsup DTS compatibility). vitest stays at 3.x; vitest 4 deferred across the workspace pending vitepress 2 stable (vitepress 1 pins vite 5; vitest 4 requires vite 6+). No user-facing behaviour change.
