@@ -16,6 +16,8 @@ type DescribableResourceType =
   | "condition"
   | "allergy-intolerance"
   | "medication-statement"
+  | "encounter"
+  | "diagnostic-report"
   | "bundle";
 
 interface ResourceDescription {
@@ -178,6 +180,53 @@ const RESOURCE_DESCRIPTIONS: Record<DescribableResourceType, ResourceDescription
       subject: "Reference to the Patient this medication record belongs to (urn:uuid: format)",
       "effectivePeriod.start": "Start date of medication use — ISO 8601 format",
       "effectivePeriod.end": "End date of medication use — ISO 8601 format (may be absent for active)",
+    },
+  },
+
+  encounter: {
+    resourceType: "Encounter",
+    description:
+      "FHIR Encounter with an HL7 v3 ActCode class, SNOMED CT encounter type, and status-aware period",
+    fields: {
+      id: "UUID v4 — unique resource identifier",
+      status:
+        "FHIR encounter status — R4/R4B: planned | arrived | in-progress | onleave | finished | cancelled | entered-in-error; R5 adds discharged | completed | discontinued",
+      class:
+        "Encounter class — R4/R4B: a single Coding from HL7 v3 ActCode (e.g., AMB, IMP, EMER); R5: an array of CodeableConcept wrapping the same ActCode",
+      "class.system":
+        "http://terminology.hl7.org/CodeSystem/v3-ActCode — HL7 v3 ActCode system (R4/R4B Coding form)",
+      "type[0].coding[0].code":
+        "SNOMED CT code identifying the encounter type (https://snomed.info/sct)",
+      "type[0].coding[0].system":
+        "SNOMED CT — Systematized Nomenclature of Medicine Clinical Terms",
+      subject: "Reference to the Patient this encounter belongs to (urn:uuid: format)",
+      "period.start":
+        "Encounter start datetime — ISO 8601 format; omitted when status is 'planned'",
+      "period.end":
+        "Encounter end datetime — ISO 8601 format; present only for closed statuses (finished/cancelled/entered-in-error in R4/R4B; discharged/completed/cancelled/discontinued/entered-in-error in R5)",
+    },
+  },
+
+  "diagnostic-report": {
+    resourceType: "DiagnosticReport",
+    description:
+      "FHIR DiagnosticReport with a LOINC code, HL7 v2-0074 service category, status, and effective datetime",
+    fields: {
+      id: "UUID v4 — unique resource identifier",
+      status:
+        "FHIR diagnostic report status — registered | partial | preliminary | final | amended | corrected | appended | cancelled | entered-in-error | unknown",
+      "category[0].coding[0].code":
+        "HL7 v2-0074 diagnostic service section code matched to the report code (e.g., LAB, RAD)",
+      "category[0].coding[0].system":
+        "http://terminology.hl7.org/CodeSystem/v2-0074 — HL7 diagnostic service section code system",
+      "code.coding[0].code":
+        "LOINC code identifying the diagnostic report type (https://loinc.org)",
+      "code.coding[0].system":
+        "LOINC — Logical Observation Identifiers Names and Codes (https://loinc.org)",
+      "code.coding[0].display": "Human-readable LOINC display name",
+      subject: "Reference to the Patient this report belongs to (urn:uuid: format)",
+      effectiveDateTime:
+        "Date and time the report's findings were clinically relevant — ISO 8601 format",
     },
   },
 
