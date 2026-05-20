@@ -37,6 +37,7 @@ pnpm-debug.log*
 
 # Internal maintainer notes (not published)
 AGENTS.md
+CLAUDE.md
 docs/PROJECT.md
 docs/specs/
 docs/research/
