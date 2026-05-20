@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `--version` long flag (alias for `-V`). Matches the `fhir-resource-diff` and `fhir-capability-analyzer` CLIs, which already supported both forms.
+- Dev: lefthook pre-commit hooks (typecheck + lint + test in parallel). Brings this repo to parity with `fhir-resource-diff` and `fhir-capability-analyzer`, which already gate local commits the same way.
 
 ### Changed
 
