@@ -34,7 +34,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high --sarif-file-output=snyk.sarif
+          args: --severity-threshold=high --sarif-file-output=snyk.sarif --all-projects
 
       - name: Upload results to GitHub Security tab
         if: hashFiles('snyk.sarif') != ''
