@@ -12,7 +12,7 @@ const program = new Command();
 program
   .name("fhir-test-data")
   .description("Generate valid FHIR R4 test resources with country-aware identifiers")
-  .version(__PACKAGE_VERSION__, "-V", "Print version number");
+  .version(__PACKAGE_VERSION__, "-V, --version", "Print version number");
 
 registerGenerateCommand(program);
 registerLocalesCommand(program);
