@@ -13,9 +13,7 @@ fhir-test-data describe [options] <resource-type>
 
 ## Resource types
 
-`patient`, `practitioner`, `practitioner-role`, `organization`, `observation`, `condition`, `allergy-intolerance`, `medication-statement`, `bundle`
-
-Note: `encounter` and `diagnostic-report` are generatable but not yet covered by `describe`.
+`patient`, `practitioner`, `practitioner-role`, `organization`, `observation`, `condition`, `allergy-intolerance`, `medication-statement`, `encounter`, `diagnostic-report`, `bundle`
 
 ## Options
 
