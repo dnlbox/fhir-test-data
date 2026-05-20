@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Dev: bumped vitest 3→4, @vitest/coverage-v8 3→4, typescript 5.9→6. No user-facing behaviour change.
 - Dev: bumped eslint to 10; removed unused zod dependency. No user-facing behaviour change.
 
 ## [0.1.3] - 2026-04-24

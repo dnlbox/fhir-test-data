@@ -20,7 +20,9 @@
     "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["node"]
   },
   "include": ["src", "tests", "vitest.config.ts", "tsup.config.ts"],
   "exclude": ["tests/compat"]
