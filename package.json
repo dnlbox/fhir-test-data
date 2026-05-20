@@ -71,16 +71,15 @@
     "prepublishOnly": "pnpm build && pnpm typecheck && pnpm test"
   },
   "dependencies": {
-    "commander": "^12.1.0",
-    "zod": "^3.25.76"
+    "commander": "^12.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.41",
     "@typescript-eslint/eslint-plugin": "^8.59.4",
     "@typescript-eslint/parser": "^8.59.4",
     "@vitest/coverage-v8": "^3.2.4",
-    "eslint": "^9.39.4",
-    "eslint-config-prettier": "^9.1.2",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.3",
     "tsup": "^8.5.1",
     "tsx": "^4.22.3",
