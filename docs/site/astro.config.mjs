@@ -34,6 +34,8 @@ export default defineConfig({
         "@fontsource/ibm-plex-mono/400.css",
         "@fontsource/ibm-plex-mono/400-italic.css",
         "@fontsource/ibm-plex-mono/700.css",
+        "./src/theme/tokens/theme-amber.css",
+        "./src/theme/styles/base.css",
         "./src/styles/custom.css",
       ],
       sidebar: [
