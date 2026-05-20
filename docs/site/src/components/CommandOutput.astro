@@ -1,0 +1,28 @@
+---
+/**
+ * CommandOutput — renders a CLI invocation alongside its actual output.
+ *
+ * Usage:
+ *   <CommandOutput cmd="fhir-test-data generate patient --locale uk --seed 42">
+ *   {actual output goes here as a string or slot}
+ *   </CommandOutput>
+ *
+ * The prompt symbol and command are visually separated from the output below.
+ * Output is scrollable at max-height (defined in custom.css).
+ */
+
+interface Props {
+  /** The CLI command string to display in the prompt line */
+  cmd: string;
+}
+
+const { cmd } = Astro.props;
+---
+
+<div class="cmd-output" role="region" aria-label={`Command: ${cmd}`}>
+  <div class="cmd-output__prompt">
+    <span class="cmd-output__prompt-symbol" aria-hidden="true">$</span>
+    <code class="cmd-output__command">{cmd}</code>
+  </div>
+  <pre class="cmd-output__result"><slot /></pre>
+</div>
