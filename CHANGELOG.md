@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Dev: bumped vitest 3→4, @vitest/coverage-v8 3→4, typescript 5.9→6. No user-facing behaviour change.
+- Dev: bumped typescript 5.9→6 (added tsconfig flags for tsup DTS compatibility). vitest stays at 3.x; vitest 4 deferred across the workspace pending vitepress 2 stable (vitepress 1 pins vite 5; vitest 4 requires vite 6+). No user-facing behaviour change.
 - Dev: bumped eslint to 10; removed unused zod dependency. No user-facing behaviour change.
 
 ## [0.1.3] - 2026-04-24
