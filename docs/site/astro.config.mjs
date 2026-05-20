@@ -3,6 +3,10 @@ import starlight from "@astrojs/starlight";
 
 export default defineConfig({
   site: "https://dnlbox.github.io",
+  // base is prepended automatically by Starlight for sidebar/autogenerate links and
+  // internal asset references. It is NOT applied automatically to hero.actions[].link
+  // or any other raw string value in frontmatter — those must include the base prefix
+  // explicitly (e.g. /fhir-test-data/getting-started/installation/).
   base: "/fhir-test-data",
   integrations: [
     starlight({
