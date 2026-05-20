@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING**: minimum Node version raised from 20 to 22 (`engines.node >=22.0.0`). Driven by upstream pnpm 11.x dropping Node 20 support (uses `node:sqlite`, available in Node 22.13+ only). `@types/node` bumped to `^24` (LTS line).
 - Upgraded CLI framework `commander` 12→14. No user-facing behaviour change expected; `--help`, `--version`, and subcommand signatures (`generate <resource-type>`, `locales`, `describe`) are unchanged. If `--help` output formatting shifts (whitespace), it is upstream cosmetic.
 - Dev: bumped typescript 5.9→6 (added tsconfig flags for tsup DTS compatibility). vitest stays at 3.x; vitest 4 deferred across the workspace pending vitepress 2 stable (vitepress 1 pins vite 5; vitest 4 requires vite 6+). No user-facing behaviour change.
 - Dev: bumped eslint to 10; removed unused zod dependency. No user-facing behaviour change.
