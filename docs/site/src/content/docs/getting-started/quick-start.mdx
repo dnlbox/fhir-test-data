@@ -1,0 +1,83 @@
+---
+title: Quick Start
+description: Generate your first FHIR resource in under a minute.
+sidebar:
+  order: 2
+---
+
+import CommandOutput from '../../../components/CommandOutput.astro';
+
+## Generate a Patient resource
+
+The `generate` command writes one FHIR resource to stdout by default. With `--locale uk` the identifier is an NHS Number, validated with Modulus 11.
+
+<CommandOutput cmd="fhir-test-data generate patient --locale uk --seed 42">
+{`{
+  "resourceType": "Patient",
+  "id": "00000000-2f89-4c89-a06f-00000000d7ba",
+  "identifier": [
+    {
+      "system": "https://fhir.nhs.uk/Id/nhs-number",
+      "value": "6604805026"
+    }
+  ],
+  "name": [
+    {
+      "use": "official",
+      "family": "Phillips",
+      "given": ["Charlotte"]
+    }
+  ],
+  "telecom": [
+    { "system": "phone", "value": "07700 538965", "use": "home" },
+    { "system": "email", "value": "charlotte.phillips@example.com", "use": "home" }
+  ],
+  "gender": "female",
+  "birthDate": "1992-04-06",
+  "address": [
+    {
+      "use": "home",
+      "line": ["5266 Park Avenue"],
+      "city": "Coventry",
+      "postalCode": "GO86 4GX",
+      "country": "GB",
+      "district": "West Midlands"
+    }
+  ],
+  "communication": [
+    { "language": { "coding": [{ "system": "urn:ietf:bcp:47", "code": "en-GB" }] } }
+  ]
+}`}
+</CommandOutput>
+
+The same seed (`42`) always produces the same output on any machine.
+
+## Generate a Bundle
+
+`bundle` composes Patient, Practitioner, PractitionerRole, Organization, and clinical resources into a single transaction Bundle with `urn:uuid:` reference wiring.
+
+```sh
+fhir-test-data generate bundle --locale us --seed 1 --fhir-version R5
+```
+
+## Generate multiple resources
+
+Use `--count` to produce several resources at once. With `--format ndjson` each resource is one line — useful for piping to bulk ingestion tools.
+
+```sh
+fhir-test-data generate patient --locale au --count 5 --format ndjson
+```
+
+## Write to files
+
+Use `--output` to write one file per resource into a directory. With `--format ndjson` all resources are written to a single `.ndjson` file.
+
+```sh
+fhir-test-data generate patient --locale de --count 10 --output ./fixtures/
+```
+
+## Next steps
+
+- [CLI reference — generate](/cli/generate/) — all flags and defaults
+- [Locales reference](/locales/overview/) — identifier types per country
+- [Library API](/api/builders/) — using builders in TypeScript code
