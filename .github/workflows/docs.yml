@@ -31,7 +31,6 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-        working-directory: docs/site
 
       - run: pnpm docs:build
 
