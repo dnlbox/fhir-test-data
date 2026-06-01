@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Command } from "commander";
 import { registerGenerateCommand } from "@/cli/commands/generate.js";
+import { existsSync, rmSync } from "node:fs";
 
 // ---------------------------------------------------------------------------
 // Helpers to capture stdout/stderr
@@ -567,3 +568,42 @@ describe("--annotate output (spec 30)", () => {
     expect(notes.length).toBeGreaterThan(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// --output directory writing
+// ---------------------------------------------------------------------------
+
+describe("generate with --output flag", () => {
+  const tempDir = "./tmp-fixtures-test";
+
+  afterEach(() => {
+    if (existsSync(tempDir)) {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("writes detailed breakdown to stderr when generating a bundle to a directory", async () => {
+    const { out, err } = await runCLI(["generate", "bundle", "--locale", "au", "--seed", "1", "--output", tempDir]);
+    
+    expect(out).toBe("");
+    expect(existsSync(`${tempDir}/Bundle-001.json`)).toBe(true);
+
+    expect(err).toContain("Generated 1 Bundle with");
+    expect(err).toContain("Output written to tmp-fixtures-test/Bundle-001.json");
+    expect(err).toContain("- Patient/");
+    expect(err).toContain("- Practitioner/");
+    expect(err).toContain("- Organization/");
+    expect(err).toContain("- Observation/");
+    expect(err).toContain("Done.");
+  });
+
+  it("writes regular resource summary to stderr when generating non-bundles to a directory", async () => {
+    const { out, err } = await runCLI(["generate", "patient", "--locale", "us", "--count", "2", "--output", tempDir]);
+    
+    expect(out).toBe("");
+    expect(existsSync(`${tempDir}/Patient-001.json`)).toBe(true);
+    expect(existsSync(`${tempDir}/Patient-002.json`)).toBe(true);
+    expect(err).toContain("Generated 2 Patient resources in ./tmp-fixtures-test");
+  });
+});
+
