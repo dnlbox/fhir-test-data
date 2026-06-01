@@ -1,0 +1,59 @@
+---
+title: locales
+description: List all supported locales with their identifier systems and check-digit algorithms.
+sidebar:
+  order: 3
+---
+
+import CommandOutput from '../../../theme/components/CommandOutput.astro';
+
+## Synopsis
+
+```
+fhir-test-data locales [options]
+```
+
+## Options
+
+```
+Options:
+  --pretty     pretty-print JSON (default for stdout) (default: true)
+  --no-pretty  compact JSON output
+  -h, --help   display help for command
+```
+
+## Description
+
+Prints a JSON array of all supported locales. Each entry contains:
+
+- `code` — the locale code passed to `--locale`
+- `name` — country display name
+- `patientIdentifiers` — identifier definitions available for Patient resources
+- `practitionerIdentifiers` — identifier definitions for Practitioner resources
+- `organizationIdentifiers` — identifier definitions for Organization resources
+
+Each identifier definition includes `name`, `system` (FHIR NamingSystem URI), and `algorithm` when a check-digit algorithm is applied.
+
+## Example
+
+<CommandOutput cmd="fhir-test-data locales">
+{`[
+  {
+    "code": "us",
+    "name": "United States",
+    "patientIdentifiers": [
+      { "name": "Social Security Number (SSN)", "system": "http://hl7.org/fhir/sid/us-ssn" },
+      { "name": "Medical Record Number (MRN)", "system": "http://hospital.example.org/fhir/mrn" }
+    ],
+    "practitionerIdentifiers": [
+      { "name": "National Provider Identifier (NPI)", "system": "http://hl7.org/fhir/sid/us-npi", "algorithm": "Luhn" }
+    ],
+    "organizationIdentifiers": [
+      { "name": "National Provider Identifier (NPI)", "system": "http://hl7.org/fhir/sid/us-npi", "algorithm": "Luhn" }
+    ]
+  },
+  ...
+]`}
+</CommandOutput>
+
+See [Locales reference](/locales/overview/) for the complete table.

@@ -1,0 +1,22 @@
+{
+  "name": "fhir-test-data-docs",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.34.8",
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "astro": "^5.18.1",
+    "sharp": "^0.33.5"
+  },
+  "packageManager": "pnpm@11.1.3",
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

@@ -1,0 +1,77 @@
+---
+title: Installation
+description: Install fhir-test-data as a CLI tool or as a library dependency.
+sidebar:
+  order: 1
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Requirements
+
+- Node.js 22 or later
+- Package manager: npm, pnpm, or yarn
+
+## CLI — global install
+
+Install the CLI globally to use `fhir-test-data` as a command anywhere:
+
+<Tabs>
+  <TabItem label="pnpm">
+  ```sh
+  pnpm add -g fhir-test-data
+  ```
+  </TabItem>
+  <TabItem label="npm">
+  ```sh
+  npm install -g fhir-test-data
+  ```
+  </TabItem>
+  <TabItem label="yarn">
+  ```sh
+  yarn global add fhir-test-data
+  ```
+  </TabItem>
+</Tabs>
+
+Verify the install:
+
+```sh
+fhir-test-data --version
+```
+
+## Library — project dependency
+
+Add as a development dependency when using the TypeScript API in test suites or build scripts:
+
+<Tabs>
+  <TabItem label="pnpm">
+  ```sh
+  pnpm add -D fhir-test-data
+  ```
+  </TabItem>
+  <TabItem label="npm">
+  ```sh
+  npm install --save-dev fhir-test-data
+  ```
+  </TabItem>
+  <TabItem label="yarn">
+  ```sh
+  yarn add --dev fhir-test-data
+  ```
+  </TabItem>
+</Tabs>
+
+## Package exports
+
+The package exposes two entry points:
+
+| Import path | Contents |
+|---|---|
+| `fhir-test-data` | Core types, all builder factories, locale utilities |
+| `fhir-test-data/faults` | `injectFaults`, `FAULT_TYPES`, fault type definitions |
+
+```ts
+import { createPatientBuilder } from "fhir-test-data";
+import { injectFaults, FAULT_TYPES } from "fhir-test-data/faults";
+```

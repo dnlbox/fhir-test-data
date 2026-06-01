@@ -64,9 +64,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "docs:dev": "vitepress dev docs/site",
-    "docs:build": "vitepress build docs/site",
-    "docs:preview": "vitepress preview docs/site",
+    "docs:dev": "pnpm --dir docs/site dev",
+    "docs:build": "pnpm --dir docs/site build",
+    "docs:preview": "pnpm --dir docs/site preview",
     "prepare": "lefthook install",
     "prepublishOnly": "pnpm build && pnpm typecheck && pnpm test"
   },
@@ -86,7 +86,6 @@
     "tsx": "^4.22.3",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.4",
-    "vitepress": "^1.6.4",
     "vitest": "^3.2.4"
   },
   "packageManager": "pnpm@11.1.3",

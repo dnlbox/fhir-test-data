@@ -17,8 +17,6 @@ export default defineConfig({
     __PACKAGE_VERSION__: JSON.stringify(pkg.version),
   },
   esbuildOptions(options) {
-    options.alias = {
-      "@": "./src",
-    };
+    options.alias = { "@": "./src" };
   },
 });

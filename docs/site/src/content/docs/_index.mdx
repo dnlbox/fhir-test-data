@@ -1,0 +1,39 @@
+---
+title: fhir-test-data
+description: TypeScript library and CLI for generating valid FHIR R4/R4B/R5 test resources with country-aware identifiers.
+template: splash
+hero:
+  tagline: Generate valid FHIR R4/R4B/R5 test resources with check-digit-correct identifiers for 14 countries.
+  actions:
+    - text: Get started
+      link: /fhir-test-data/getting-started/installation/
+      icon: right-arrow
+      variant: primary
+    - text: CLI reference
+      link: /fhir-test-data/cli/generate/
+      icon: document
+      variant: secondary
+---
+
+import { CardGrid, Card } from '@astrojs/starlight/components';
+
+<CardGrid stagger>
+  <Card title="14 locales" icon="globe">
+    Generates country-appropriate identifiers, addresses, and names for: US, UK, Australia, Canada, Germany, France, Netherlands, India, Japan, South Korea, Singapore, Brazil, Mexico, South Africa.
+  </Card>
+  <Card title="Check-digit validated" icon="approve-check">
+    Every identifier passes its country's validation algorithm: NHS Modulus 11, Australian IHI Luhn, Aadhaar Verhoeff, Dutch BSN 11-proef, French NIR Modulus 97, and more.
+  </Card>
+  <Card title="11 resource types" icon="list-format">
+    Patient, Practitioner, PractitionerRole, Organization, Observation, Condition, AllergyIntolerance, MedicationStatement, Encounter, DiagnosticReport, Bundle.
+  </Card>
+  <Card title="Deterministic output" icon="setting">
+    Pass `--seed` to produce identical output across runs and environments. Reproducible CI fixtures without committed JSON files.
+  </Card>
+  <Card title="FHIR R4, R4B, R5" icon="star">
+    All builders accept `.fhirVersion("R4" | "R4B" | "R5")`. R5 structural adaptations include MedicationUsage and CodeableConcept changes.
+  </Card>
+  <Card title="Browser-safe core" icon="puzzle">
+    `src/core/` carries no Node.js imports. Use the library in test suites, build scripts, browsers, Deno, or Cloudflare Workers.
+  </Card>
+</CardGrid>
