@@ -141,6 +141,107 @@ function formatIndex(i: number, total: number): string {
 
 type OutputUnit = FhirResource | AnnotatedResource;
 
+const SYSTEM_ABBREVIATIONS: Record<string, string> = {
+  "http://hl7.org/fhir/sid/us-ssn": "SSN",
+  "http://hospital.example.org/fhir/mrn": "MRN",
+  "http://hl7.org/fhir/sid/us-npi": "NPI",
+  "https://fhir.infoway-inforoute.ca/NamingSystem/ca-on-patient-hcn": "HCN",
+  "https://www.cpso.on.ca/": "CPSO",
+  "https://fhir.nhs.uk/Id/nhs-number": "NHS",
+  "https://fhir.nhs.uk/Id/ods-organization-code": "ODS",
+  "https://fhir.nhs.uk/Id/gmp-number": "GMP",
+  "https://fhir.hl7.org.uk/Id/gmc-number": "GMC",
+  "http://ns.electronichealth.net.au/id/hi/ihi/1.0": "IHI",
+  "http://ns.electronichealth.net.au/id/medicare-number": "Medicare",
+  "http://ns.electronichealth.net.au/id/hi/hpii/1.0": "HPI-I",
+  "http://ns.electronichealth.net.au/id/hi/hpio/1.0": "HPI-O",
+  "http://fhir.de/sid/gkv/kvid-10": "KVID",
+  "http://fhir.de/sid/kbv/lanr": "LANR",
+  "http://fhir.de/sid/kbv/bsnr": "BSNR",
+  "http://fhir.de/sid/arge-ik/iknr": "IKNR",
+  "https://annuaire.sante.fr/finess": "FINESS",
+  "http://fhir.nl/fhir/NamingSystem/bsn": "BSN",
+  "http://fhir.nl/fhir/NamingSystem/uzi-nr-pers": "UZI",
+  "http://fhir.nl/fhir/NamingSystem/agb-z": "AGB-Z",
+  "https://healthid.ndhm.gov.in/api/v1/auth/aadhaar": "Aadhaar",
+  "https://healthid.abdm.gov.in/api/v1/abha-number": "ABHA",
+  "https://www.nmc.org.in/": "NMC",
+  "http://jpfhir.jp/fhir/core/NamingSystem/jp-hospitalPatientId": "Patient ID",
+  "http://jpfhir.jp/fhir/core/NamingSystem/jp-doctor-license": "License",
+  "http://www.mohw.go.kr/fhir/NamingSystem/rrn": "RRN",
+  "http://www.mohw.go.kr/fhir/NamingSystem/doctor-license": "License",
+  "http://hl7.org.sg/fhir/NamingSystem/nric-fin": "NRIC/FIN",
+  "http://www.smc.gov.sg/fhir/NamingSystem/smcr": "SMC",
+  "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cpf": "CPF",
+  "https://www.cfm.org.br/fhir/NamingSystem/crm": "CRM",
+  "http://www.salud.gob.mx/fhir/NamingSystem/curp": "CURP",
+  "http://www.sep.gob.mx/fhir/NamingSystem/cedula": "Cédula",
+  "http://www.rsaidentity.co.za/fhir/NamingSystem/said": "said",
+  "https://www.hpcsa.co.za/fhir/NamingSystem/hpcsa": "HPCSA",
+};
+
+function getResourceSummary(resource: FhirResource): string {
+  const resourceType = resource.resourceType;
+  const id = resource.id ?? "";
+  let info = "";
+
+  const res = resource as Record<string, unknown>;
+
+  if (resourceType === "Patient" || resourceType === "Practitioner" || resourceType === "Organization") {
+    const ident = (res["identifier"] as Array<Record<string, unknown>> | undefined)?.[0];
+    if (ident) {
+      let sysLabel = "Identifier";
+      const system = ident["system"] as string | undefined;
+      const value = ident["value"] as string | undefined;
+      if (system) {
+        if (system === "https://annuaire.sante.fr") {
+          sysLabel = resourceType === "Patient" ? "NIR" : "RPPS";
+        } else if (SYSTEM_ABBREVIATIONS[system]) {
+          sysLabel = SYSTEM_ABBREVIATIONS[system]!;
+        }
+      }
+      info = value ? `${sysLabel}: ${value}` : "";
+    }
+  } else if (resourceType === "Observation") {
+    const codeVal = res["code"] as Record<string, unknown> | undefined;
+    const coding = codeVal?.["coding"] as Array<Record<string, unknown>> | undefined;
+    const codeDisplay = coding?.[0]?.["display"] as string | undefined ?? "Observation";
+    const valueQuantity = res["valueQuantity"] as Record<string, unknown> | undefined;
+    const val = valueQuantity?.["value"] as number | undefined;
+    const unit = valueQuantity?.["unit"] as string | undefined;
+    if (val !== undefined && unit !== undefined) {
+      info = `${codeDisplay}: ${val} ${unit}`;
+    } else {
+      info = codeDisplay;
+    }
+  } else if (resourceType === "Condition") {
+    const codeVal = res["code"] as Record<string, unknown> | undefined;
+    const coding = codeVal?.["coding"] as Array<Record<string, unknown>> | undefined;
+    info = coding?.[0]?.["display"] as string | undefined ?? "Condition";
+  } else if (resourceType === "AllergyIntolerance") {
+    const codeVal = res["code"] as Record<string, unknown> | undefined;
+    const coding = codeVal?.["coding"] as Array<Record<string, unknown>> | undefined;
+    info = coding?.[0]?.["display"] as string | undefined ?? "AllergyIntolerance";
+  } else if (resourceType === "MedicationStatement" || resourceType === "MedicationUsage") {
+    const concept = (res["medicationCodeableConcept"] ?? res["medication"]) as Record<string, unknown> | undefined;
+    const coding = concept?.["coding"] as Array<Record<string, unknown>> | undefined;
+    info = coding?.[0]?.["display"] as string | undefined ?? "Medication";
+  } else if (resourceType === "PractitionerRole") {
+    const code = (res["code"] as Array<Record<string, unknown>> | undefined)?.[0];
+    const coding = code?.["coding"] as Array<Record<string, unknown>> | undefined;
+    info = coding?.[0]?.["display"] as string | undefined ?? "PractitionerRole";
+  } else if (resourceType === "Encounter") {
+    const classVal = res["class"] as Record<string, unknown> | undefined;
+    info = classVal?.["display"] as string | undefined ?? "Encounter";
+  } else if (resourceType === "DiagnosticReport") {
+    const codeVal = res["code"] as Record<string, unknown> | undefined;
+    const coding = codeVal?.["coding"] as Array<Record<string, unknown>> | undefined;
+    info = coding?.[0]?.["display"] as string | undefined ?? "DiagnosticReport";
+  }
+
+  return info ? `${resourceType}/${id} (${info})` : `${resourceType}/${id}`;
+}
+
 function writeToOutput(
   units: OutputUnit[],
   resourceType: ConcreteResourceType,
@@ -168,9 +269,31 @@ function writeToOutput(
     }
   }
 
-  process.stderr.write(
-    `Generated ${units.length} ${fhirType} resource${units.length === 1 ? "" : "s"} in ${outputDir}\n`,
-  );
+  if (fhirType === "Bundle") {
+    for (let i = 0; i < units.length; i++) {
+      const idx = formatIndex(i, units.length);
+      const filePath = join(outputDir, `${fhirType}-${idx}.json`);
+      const bundle = annotate
+        ? (units[i] as AnnotatedResource).resource
+        : (units[i] as FhirResource);
+      const entries = (bundle.entry as Array<Record<string, unknown>> | undefined) ?? [];
+
+      process.stderr.write(`\nGenerated 1 Bundle with ${entries.length} resources.\n`);
+      process.stderr.write(`Output written to ${filePath}\n`);
+
+      for (const entry of entries) {
+        const res = entry.resource as FhirResource | undefined;
+        if (res) {
+          process.stderr.write(`- ${getResourceSummary(res)}\n`);
+        }
+      }
+    }
+    process.stderr.write("Done.\n");
+  } else {
+    process.stderr.write(
+      `Generated ${units.length} ${fhirType} resource${units.length === 1 ? "" : "s"} in ${outputDir}\n`,
+    );
+  }
 }
 
 function writeToStdout(
