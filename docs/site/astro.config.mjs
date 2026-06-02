@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import fs from "node:fs/promises";
 
 export default defineConfig({
   site: "https://dnlbox.github.io",
@@ -67,6 +68,21 @@ export default defineConfig({
       pagination: true,
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },
     }),
+    {
+      name: "copy-sitemap",
+      hooks: {
+        "astro:build:done": async ({ dir }) => {
+          try {
+            await fs.copyFile(
+              new URL("sitemap-index.xml", dir),
+              new URL("sitemap.xml", dir)
+            );
+          } catch (err) {
+            console.error("Failed to copy sitemap-index.xml to sitemap.xml:", err);
+          }
+        },
+      },
+    },
   ],
   legacy: {
     collections: true,
