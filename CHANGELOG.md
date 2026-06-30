@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Bundle recipes: `generate bundle --recipe <file>` now accepts user-defined YAML or JSON recipes for deterministic, pipeline-oriented Bundle generation. Recipes define ordered resources, aliases, field overrides, and reference wiring while keeping clinical meaning user-owned.
+- Public recipe API: `createBundleFromRecipe(recipe, options)` plus exported recipe types.
+- Starter recipe examples under `examples/recipes/` for lab result, condition plus medication, and diagnostic workup bundle shapes.
+
 ## [0.2.0] - 2026-06-01
 
 ### Added

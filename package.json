@@ -34,6 +34,7 @@
   },
   "files": [
     "dist/",
+    "examples/",
     "README.md",
     "LICENSE"
   ],
@@ -71,9 +72,11 @@
     "prepublishOnly": "pnpm build && pnpm typecheck && pnpm test"
   },
   "dependencies": {
-    "commander": "^15.0.0"
+    "commander": "^15.0.0",
+    "js-yaml": "^4.1.1"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.12.4",
     "@typescript-eslint/eslint-plugin": "^8.59.4",
     "@typescript-eslint/parser": "^8.59.4",

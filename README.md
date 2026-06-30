@@ -172,6 +172,81 @@ const [bundle] = createBundleBuilder()
 
 Each bundle includes: Patient, Organization, Practitioner, PractitionerRole, and N clinical resources (Observations, Conditions, AllergyIntolerance, MedicationStatement). All internal references are consistent: `Observation.subject` points to the Patient, `Observation.performer[0]` to the Practitioner, and `Patient.managingOrganization` to the Organization.
 
+## Bundle recipes
+
+For pipeline tests that need a specific bundle shape, define a user-owned YAML or JSON recipe:
+
+```bash
+fhir-test-data generate bundle --recipe ./lab-result-basic.yaml --seed 42
+```
+
+Recipes are composition rules, not clinical scenario models. The user chooses the resource mix, codes, values, and reference graph; `fhir-test-data` handles deterministic generation, FHIR resource builders, deep-merged field overrides, and reference wiring.
+
+```yaml
+name: lab-result-basic
+locale: uk
+fhirVersion: R4
+bundle:
+  type: transaction
+resources:
+  - type: Patient
+    id: patient
+  - type: Encounter
+    id: encounter
+    fields:
+      subject: patient
+  - type: Observation
+    id: hba1c
+    fields:
+      subject: patient
+      encounter: encounter
+      category:
+        - coding:
+            - system: http://terminology.hl7.org/CodeSystem/observation-category
+              code: laboratory
+              display: Laboratory
+      code:
+        coding:
+          - system: http://loinc.org
+            code: "4548-4"
+            display: HbA1c
+      valueQuantity:
+        value: 7.2
+        unit: "%"
+        system: http://unitsofmeasure.org
+        code: "%"
+  - type: DiagnosticReport
+    id: report
+    fields:
+      subject: patient
+      encounter: encounter
+      category:
+        - coding:
+            - system: http://terminology.hl7.org/CodeSystem/v2-0074
+              code: LAB
+              display: Laboratory
+      code:
+        coding:
+          - system: http://loinc.org
+            code: "55454-3"
+            display: Hemoglobin A1c in Blood
+      result:
+        - hba1c
+```
+
+Recipe fields are deep-merged into generated resources. Reference fields such as `subject`, `encounter`, `performer`, `result`, `organization`, and `practitioner` can use recipe aliases. CLI flags override recipe defaults:
+
+```bash
+fhir-test-data generate bundle --recipe ./lab-result-basic.yaml \
+  --locale us --fhir-version R5 --count 2 --seed 42
+```
+
+Starter recipes are published under `examples/recipes/`:
+
+- `lab-result-basic.yaml`
+- `condition-medication-basic.yaml`
+- `diagnostic-workup-basic.yaml`
+
 ---
 
 ## Fault injection
