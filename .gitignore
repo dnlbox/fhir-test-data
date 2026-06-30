@@ -34,11 +34,18 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# AI tooling
 .claude/
+.agents/
+skills-lock.json
+BUILD_STATE.md
+ROADMAP.md
 
 # Internal maintainer notes (not published)
 AGENTS.md
 CLAUDE.md
+docs/AGENTS.md
 docs/PROJECT.md
 docs/specs/
 docs/research/
