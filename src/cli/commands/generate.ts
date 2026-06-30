@@ -1,6 +1,7 @@
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Command } from "commander";
+import { load as loadYaml } from "js-yaml";
 import { createPatientBuilder } from "@/core/builders/patient.js";
 import { createPractitionerBuilder } from "@/core/builders/practitioner.js";
 import { createOrganizationBuilder } from "@/core/builders/organization.js";
@@ -15,6 +16,8 @@ import { createBundleBuilder } from "@/core/builders/bundle.js";
 import { deepMerge } from "@/core/builders/utils.js";
 import { SUPPORTED_LOCALES, SUPPORTED_FHIR_VERSIONS } from "@/core/types.js";
 import type { FhirVersion, Locale, FhirResource, AnnotatedResource } from "@/core/types.js";
+import { BundleRecipeError, createBundleFromRecipe } from "@/core/recipes.js";
+import type { BundleRecipe, BundleRecipeOptions } from "@/core/recipes.js";
 import { injectFaults, FAULT_TYPES } from "@/core/faults/index.js";
 import type { FaultType } from "@/core/faults/index.js";
 import { createRng } from "@/core/generators/rng.js";
@@ -76,6 +79,7 @@ interface GenerateOptions {
   faults?: string;
   overrides?: string;
   annotate: boolean;
+  recipe?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -128,6 +132,42 @@ async function readStdinOverrides(): Promise<Record<string, unknown> | null> {
     });
     process.stdin.on("error", reject);
   });
+}
+
+// ---------------------------------------------------------------------------
+// Recipe loading
+// ---------------------------------------------------------------------------
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function loadRecipeFile(filePath: string): BundleRecipe {
+  let raw: string;
+  try {
+    raw = readFileSync(filePath, "utf8");
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new BundleRecipeError(`could not read recipe file "${filePath}": ${message}`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = filePath.endsWith(".json") ? JSON.parse(raw) : loadYaml(raw);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new BundleRecipeError(`could not parse recipe file "${filePath}": ${message}`);
+  }
+
+  if (!isRecord(parsed)) {
+    throw new BundleRecipeError(`recipe file "${filePath}" must contain an object`);
+  }
+
+  return parsed as unknown as BundleRecipe;
+}
+
+function optionWasProvided(command: Command | undefined, optionName: string): boolean {
+  return command !== undefined && command.getOptionValueSource(optionName) !== "default";
 }
 
 // ---------------------------------------------------------------------------
@@ -320,7 +360,7 @@ function writeToStdout(
 // Main action
 // ---------------------------------------------------------------------------
 
-async function runGenerate(resourceType: string, opts: GenerateOptions): Promise<void> {
+async function runGenerate(resourceType: string, opts: GenerateOptions, command?: Command): Promise<void> {
   if (!ALL_RESOURCE_TYPES.includes(resourceType as ResourceType)) {
     process.stderr.write(
       `Error: unknown resource type "${resourceType}". Valid types: ${ALL_RESOURCE_TYPES.join(", ")}\n`,
@@ -383,6 +423,11 @@ async function runGenerate(resourceType: string, opts: GenerateOptions): Promise
 
   const hasOverrides = Object.keys(overridesObj).length > 0;
 
+  if (opts.recipe !== undefined && resourceType !== "bundle") {
+    process.stderr.write("Error: --recipe can only be used with generate bundle\n");
+    process.exit(1);
+  }
+
   // ---------------------------------------------------------------------------
   // Build resources
   // ---------------------------------------------------------------------------
@@ -407,6 +452,67 @@ async function runGenerate(resourceType: string, opts: GenerateOptions): Promise
       ? Number.parseInt(opts.seed, 10)
       : Math.floor(Math.random() * 0x7fffffff);
   const format = opts.format === "ndjson" ? "ndjson" : "json";
+
+  if (opts.recipe !== undefined) {
+    let recipe: BundleRecipe;
+    try {
+      recipe = loadRecipeFile(opts.recipe);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      process.stderr.write(`Error: ${message}\n`);
+      process.exit(1);
+    }
+
+    const recipeOptions: BundleRecipeOptions = {
+      seed,
+      ...(optionWasProvided(command, "count") && { count }),
+      ...(optionWasProvided(command, "locale") && { locale }),
+      ...(optionWasProvided(command, "fhirVersion") && { fhirVersion }),
+    };
+
+    let resources: FhirResource[];
+    try {
+      resources = createBundleFromRecipe(recipe, recipeOptions);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      process.stderr.write(`Error: ${message}\n`);
+      process.exit(1);
+    }
+
+    if (faults.length > 0) {
+      const faultRng = createRng(seed + 1);
+      resources = resources.map((r) => injectFaults(r, faults, faultRng));
+    }
+
+    if (hasOverrides) {
+      resources = resources.map(
+        (r) => deepMerge(r as Record<string, unknown>, overridesObj) as FhirResource,
+      );
+    }
+
+    const annotationLocale = recipeOptions.locale ?? recipe.locale ?? "us";
+    const localeDefinition = getLocale(annotationLocale);
+    const units: OutputUnit[] = opts.annotate
+      ? resources.map((r) => ({
+          resource: r,
+          notes: annotateResource(r, localeDefinition),
+        }))
+      : resources;
+
+    if (opts.output !== undefined) {
+      try {
+        writeToOutput(units, "bundle", opts.output, format, opts.annotate);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        process.stderr.write(`Error writing output: ${message}\n`);
+        process.exit(2);
+      }
+    } else {
+      writeToStdout(units, format, opts.pretty);
+    }
+    return;
+  }
+
   const localeDefinition = getLocale(locale);
 
   const typesToGenerate: ConcreteResourceType[] =
@@ -518,5 +624,6 @@ export function registerGenerateCommand(program: Command): void {
       "| jq '.resource' | fhir-resource-diff validate -",
       false,
     )
+    .option("--recipe <file>", "YAML or JSON bundle recipe file. Only valid with generate bundle")
     .action(runGenerate);
 }

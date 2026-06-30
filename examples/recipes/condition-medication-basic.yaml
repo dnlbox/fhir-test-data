@@ -1,0 +1,30 @@
+name: condition-medication-basic
+locale: us
+fhirVersion: R4
+bundle:
+  type: transaction
+resources:
+  - type: Patient
+    id: patient
+  - type: Condition
+    id: condition
+    fields:
+      subject: patient
+      code:
+        coding:
+          - system: http://snomed.info/sct
+            code: "38341003"
+            display: Hypertension
+        text: Hypertension
+  - type: MedicationStatement
+    id: medication
+    fields:
+      subject: patient
+      medicationCodeableConcept:
+        coding:
+          - system: http://www.nlm.nih.gov/research/umls/rxnorm
+            code: "197361"
+            display: Amlodipine 5 MG Oral Tablet
+        text: Amlodipine 5 MG Oral Tablet
+      dosage:
+        - text: 5 mg daily

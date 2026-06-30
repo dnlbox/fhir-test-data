@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Command } from "commander";
 import { registerGenerateCommand } from "@/cli/commands/generate.js";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, rmSync, writeFileSync } from "node:fs";
 
 // ---------------------------------------------------------------------------
 // Helpers to capture stdout/stderr
@@ -607,3 +607,147 @@ describe("generate with --output flag", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Bundle recipes
+// ---------------------------------------------------------------------------
+
+describe("generate bundle --recipe", () => {
+  const yamlRecipePath = "./tmp-recipe.yaml";
+  const jsonRecipePath = "./tmp-recipe.json";
+
+  afterEach(() => {
+    for (const path of [yamlRecipePath, jsonRecipePath]) {
+      if (existsSync(path)) rmSync(path, { force: true });
+    }
+  });
+
+  const recipeObject = {
+    name: "lab-result-basic",
+    locale: "uk",
+    fhirVersion: "R4",
+    resources: [
+      { type: "Patient", id: "patient" },
+      { type: "Encounter", id: "encounter", fields: { subject: "patient" } },
+      {
+        type: "Observation",
+        id: "hba1c",
+        fields: {
+          subject: "patient",
+          encounter: "encounter",
+          code: {
+            coding: [{ system: "http://loinc.org", code: "4548-4", display: "HbA1c" }],
+            text: "HbA1c",
+          },
+        },
+      },
+      {
+        type: "DiagnosticReport",
+        id: "report",
+        fields: {
+          subject: "patient",
+          encounter: "encounter",
+          result: ["hba1c"],
+        },
+      },
+    ],
+  };
+
+  function writeYamlRecipe(): void {
+    writeFileSync(
+      yamlRecipePath,
+      [
+        "name: lab-result-basic",
+        "locale: uk",
+        "fhirVersion: R4",
+        "resources:",
+        "  - type: Patient",
+        "    id: patient",
+        "  - type: Encounter",
+        "    id: encounter",
+        "    fields:",
+        "      subject: patient",
+        "  - type: Observation",
+        "    id: hba1c",
+        "    fields:",
+        "      subject: patient",
+        "      encounter: encounter",
+        "      code:",
+        "        coding:",
+        "          - system: http://loinc.org",
+        "            code: \"4548-4\"",
+        "            display: HbA1c",
+        "        text: HbA1c",
+        "  - type: DiagnosticReport",
+        "    id: report",
+        "    fields:",
+        "      subject: patient",
+        "      encounter: encounter",
+        "      result:",
+        "        - hba1c",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+  }
+
+  function writeJsonRecipe(): void {
+    writeFileSync(jsonRecipePath, JSON.stringify(recipeObject, null, 2), "utf8");
+  }
+
+  it("generates a Bundle from a YAML recipe file", async () => {
+    writeYamlRecipe();
+    const { out } = await runCLI(["generate", "bundle", "--recipe", yamlRecipePath, "--seed", "42"]);
+    const bundle = JSON.parse(out) as Record<string, unknown>;
+    const entries = bundle["entry"] as Array<Record<string, unknown>>;
+    const types = entries.map((entry) => (entry["resource"] as Record<string, unknown>)["resourceType"]);
+
+    expect(bundle["resourceType"]).toBe("Bundle");
+    expect(types).toEqual(["Patient", "Encounter", "Observation", "DiagnosticReport"]);
+  });
+
+  it("generates equivalent resource types from equivalent JSON and YAML recipes", async () => {
+    writeYamlRecipe();
+    writeJsonRecipe();
+    const { out: yamlOut } = await runCLI(["generate", "bundle", "--recipe", yamlRecipePath, "--seed", "42"]);
+    const { out: jsonOut } = await runCLI(["generate", "bundle", "--recipe", jsonRecipePath, "--seed", "42"]);
+    const yamlBundle = JSON.parse(yamlOut) as Record<string, unknown>;
+    const jsonBundle = JSON.parse(jsonOut) as Record<string, unknown>;
+    const yamlTypes = (yamlBundle["entry"] as Array<Record<string, unknown>>)
+      .map((entry) => (entry["resource"] as Record<string, unknown>)["resourceType"]);
+    const jsonTypes = (jsonBundle["entry"] as Array<Record<string, unknown>>)
+      .map((entry) => (entry["resource"] as Record<string, unknown>)["resourceType"]);
+
+    expect(yamlTypes).toEqual(jsonTypes);
+  });
+
+  it("CLI locale, fhir version, seed, and count override recipe defaults", async () => {
+    writeYamlRecipe();
+    const { out } = await runCLI([
+      "generate", "bundle", "--recipe", yamlRecipePath,
+      "--locale", "us", "--fhir-version", "R5", "--seed", "42", "--count", "2",
+    ]);
+    const bundles = JSON.parse(out) as Array<Record<string, unknown>>;
+    const firstResources = (bundles[0]?.["entry"] as Array<Record<string, unknown>>)
+      .map((entry) => entry["resource"] as Record<string, unknown>);
+    const patient = firstResources.find((resource) => resource["resourceType"] === "Patient");
+
+    expect(bundles).toHaveLength(2);
+    expect((patient?.["communication"] as Array<Record<string, unknown>>)[0]).toBeDefined();
+  });
+
+  it("exits 1 when --recipe is used with a non-bundle resource", async () => {
+    writeYamlRecipe();
+    let threw = false;
+    let errOutput = "";
+    try {
+      await runCLI(["generate", "patient", "--recipe", yamlRecipePath]);
+    } catch (e) {
+      threw = true;
+      if (e instanceof CLIError) errOutput = e.err;
+    }
+
+    expect(threw).toBe(true);
+    expect(exitCode).toBe(1);
+    expect(errOutput).toContain("--recipe can only be used with generate bundle");
+  });
+});

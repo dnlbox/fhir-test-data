@@ -1,0 +1,51 @@
+name: lab-result-basic
+locale: us
+fhirVersion: R4
+bundle:
+  type: transaction
+resources:
+  - type: Patient
+    id: patient
+  - type: Encounter
+    id: encounter
+    fields:
+      subject: patient
+  - type: Observation
+    id: lab-result
+    fields:
+      subject: patient
+      encounter: encounter
+      category:
+        - coding:
+            - system: http://terminology.hl7.org/CodeSystem/observation-category
+              code: laboratory
+              display: Laboratory
+      code:
+        coding:
+          - system: http://loinc.org
+            code: "4548-4"
+            display: HbA1c
+        text: HbA1c
+      valueQuantity:
+        value: 7.2
+        unit: "%"
+        system: http://unitsofmeasure.org
+        code: "%"
+  - type: DiagnosticReport
+    id: report
+    fields:
+      subject: patient
+      encounter: encounter
+      category:
+        - coding:
+            - system: http://terminology.hl7.org/CodeSystem/v2-0074
+              code: LAB
+              display: Laboratory
+      code:
+        coding:
+          - system: http://loinc.org
+            code: "55454-3"
+            display: Hemoglobin A1c in Blood
+        text: Hemoglobin A1c in Blood
+      result:
+        - lab-result
